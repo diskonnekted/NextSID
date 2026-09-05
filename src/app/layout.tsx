@@ -33,7 +33,15 @@ export default async function RootLayout({
   const theme = await ambilThemeAktif();
 
   return (
-    <html lang="id" className={`${inter.variable} ${fraunces.variable}`}>
+    <html
+      lang="id"
+      // Beberapa ekstensi browser (mis. perekam aktivitas) menyuntik atribut
+      // ke <html> saat hydration; suppressHydrationWarning di sini supaya
+      // React tidak mengeluarkan warning "Extra attributes from the server"
+      // untuk atribut yang bukan berasal dari aplikasi.
+      suppressHydrationWarning
+      className={`${inter.variable} ${fraunces.variable}`}
+    >
       <body className="min-h-screen bg-paper font-sans text-ink antialiased">
         <theme.partials.Header />
         <main>{children}</main>

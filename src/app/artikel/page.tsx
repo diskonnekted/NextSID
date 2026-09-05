@@ -107,8 +107,14 @@ export default async function DaftarArtikel({
                 {kategoriInfo.nama ? ` dalam ${kategoriInfo.nama}` : ""}
               </p>
               <div className="mt-8 grid gap-10 sm:grid-cols-2">
-                {daftar.items.map((a) => (
-                  <Article key={a.id} artikel={a} />
+                {daftar.items.map((a, idx) => (
+                  <Article
+                    key={a.id}
+                    artikel={a}
+                    // Gambar artikel pertama diprioritaskan untuk LCP.
+                    // Sisanya lazy-load.
+                    {...(idx === 0 ? { priority: true } : {})}
+                  />
                 ))}
               </div>
               <div className="mt-12">

@@ -14,9 +14,19 @@ type ArticleCardProps = {
     author?: { nama: string } | null;
   };
   varian?: "default" | "lead" | "compact" | "quote";
+  /**
+   * Set true untuk gambar yang kemungkinan jadi LCP (mis. lead article di
+   * halaman daftar, atau card pertama). Next.js akan preload image-nya
+   * sehingga LCP lebih cepat. Default false.
+   */
+  priority?: boolean;
 };
 
-export function ArticleCard({ artikel, varian = "default" }: ArticleCardProps) {
+export function ArticleCard({
+  artikel,
+  varian = "default",
+  priority = false,
+}: ArticleCardProps) {
   const href = `/artikel/${artikel.slug ?? artikel.id}`;
   const ringkasan = potongTeks(artikel.isi.replace(/<[^>]+>/g, " "), varian === "lead" ? 220 : 130);
 
@@ -30,6 +40,7 @@ export function ArticleCard({ artikel, varian = "default" }: ArticleCardProps) {
                 src={artikel.gambar}
                 alt={artikel.judul}
                 fill
+                priority={priority}
                 sizes="(min-width: 1024px) 58vw, 100vw"
                 className="object-cover"
               />
@@ -93,6 +104,7 @@ export function ArticleCard({ artikel, varian = "default" }: ArticleCardProps) {
               src={artikel.gambar}
               alt={artikel.judul}
               fill
+              priority={priority}
               sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
               className="object-cover transition duration-500 hover:scale-[1.02]"
             />
