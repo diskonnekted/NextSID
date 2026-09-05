@@ -1,0 +1,123 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-fraunces: "Fraunces", "Georgia", serif;
+  --font-inter: "Inter", system-ui, -apple-system, sans-serif;
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    @apply bg-paper text-ink font-sans;
+    font-feature-settings: "ss01", "cv01", "kern";
+  }
+  h1, h2, h3, h4 {
+    @apply font-serif;
+    font-feature-settings: "kern", "liga", "ss01";
+  }
+  ::selection {
+    background-color: #b5482a;
+    color: #fafaf7;
+  }
+  a {
+    @apply transition-colors;
+  }
+  /* Default visible focus indicator (R-32) */
+  *:focus-visible {
+    outline: 2px solid #b5482a;
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+}
+
+@layer components {
+  .rule {
+    @apply border-t border-ink/15;
+  }
+  .container-page {
+    @apply mx-auto max-w-page px-5 lg:px-10;
+  }
+  .meta {
+    @apply text-xs uppercase tracking-[0.08em] text-ink-muted;
+  }
+  .link-clay {
+    @apply text-clay underline decoration-clay/40 underline-offset-4 transition-colors hover:decoration-clay;
+  }
+}
+
+/* ============================================================
+   Mode admin: sembunyikan chrome publik (header + footer tema)
+   ketika ada atribut [data-admin-scope] di mana pun di body.
+   ============================================================ */
+body:has([data-admin-scope]) [data-chrome="public"] {
+  display: none !important;
+}
+
+/* Strip default radius on form controls for editorial feel */
+@layer base {
+  input[type="text"], input[type="email"], input[type="search"] {
+    @apply rounded-none border-b border-ink/30 bg-transparent px-1 py-2 focus:border-clay focus:outline-none;
+  }
+}
+
+/* Editorial article body styling */
+.prose {
+  @apply text-ink;
+}
+.prose p {
+  @apply mb-6 leading-relaxed;
+}
+.prose p:first-of-type::first-letter {
+  @apply font-serif float-left mr-3 text-5xl leading-none pt-2 text-clay;
+}
+.prose h2 {
+  @apply mt-12 mb-4 text-2xl leading-snug;
+}
+.prose h3 {
+  @apply mt-10 mb-3 text-xl leading-snug;
+}
+.prose a {
+  @apply text-clay underline decoration-clay/40 underline-offset-4 hover:decoration-clay;
+}
+.prose ul {
+  @apply mb-6 list-disc pl-6 space-y-2;
+}
+.prose ol {
+  @apply mb-6 list-decimal pl-6 space-y-2;
+}
+.prose blockquote {
+  @apply my-8 border-l-2 border-clay pl-6 italic text-ink-soft;
+}
+.prose img {
+  @apply my-8 w-full;
+}
+.prose figure {
+  @apply my-8;
+}
+.prose figcaption {
+  @apply meta mt-3 text-center;
+}
+.prose hr {
+  @apply my-12 border-ink/15;
+}
+.prose code {
+  @apply bg-paper-dim px-1 py-0.5 font-mono text-sm;
+}
+.prose pre {
+  @apply my-6 overflow-x-auto border border-ink/15 bg-paper-dim p-4 font-mono text-sm;
+}
+.prose table {
+  @apply my-6 w-full border-collapse text-sm;
+}
+.prose th {
+  @apply border-b border-ink/30 pb-2 text-left font-medium;
+}
+.prose td {
+  @apply border-b border-ink/10 py-2;
+}

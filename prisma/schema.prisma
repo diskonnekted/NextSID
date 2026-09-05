@@ -1,0 +1,937 @@
+// Prisma schema untuk Surat SID
+// Schema ini didesain agar kompatibel dengan database OpenSID lama,
+// dengan normalisasi dan naming convention snake_case ala Laravel/CodeIgniter.
+//
+// Untuk demo local pakai SQLite (file .db). Untuk produksi pakai MySQL
+// dengan tipe data persis (VarChar/LongText) — lihat schema.mysql.prisma.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// =====================================================================
+// IDENTITAS DESA
+// =====================================================================
+
+model Config {
+  id                Int     @id @default(autoincrement())
+  // Identitas desa (diperluas mengikuti OpenSID asli)
+  nama_desa         String
+  kode_desa         String?
+  kode_desa_bps     String?
+  kode_pos          String?
+  alamat            String?
+  alamat_kantor     String?
+  email             String?
+  telepon           String?
+  nomor_operator    String?
+  website           String?
+  nama_kecamatan    String?
+  kode_kecamatan    String?
+  nama_kepala_camat String?
+  nip_kepala_camat  String?
+  nama_kabupaten    String?
+  kode_kabupaten    String?
+  nama_propinsi     String?
+  kode_propinsi     String?
+  logo              String?
+  kantor_desa       String?
+  hero_banner       String?
+  // Peta
+  lat               String?
+  lng               String?
+  zoom              Int?
+  map_tipe          String?
+  path              String?
+  // Tema
+  warna             String?
+  border            String?
+  // Kontak pengaduan
+  nama_kontak       String?
+  hp_kontak         String?
+  jabatan_kontak    String?
+  // App
+  app_key           String?
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+
+  artikel             Artikel[]
+  kategori            Kategori[]
+  widget              Widget[]
+  komentar            Komentar[]
+  users               User[]
+  keluarga            Keluarga[]
+  penduduk            Penduduk[]
+  wilayah             Wilayah[]
+  pamong              Pamong[]
+  ref_jabatan         RefJabatan[]
+  lembaga             Lembaga[]
+  profil_desa         ProfilDesa[]
+  layanan_pelanggan   LayananPelanggan[]
+  kerjasama           Kerjasama[]
+  ref_syarat_surat    RefSyaratSurat[]
+  surat_format        SuratFormat[]
+  lampiran_surat      LampiranSurat[]
+  log_surat           LogSurat[]
+  log_tolak           LogTolak[]
+  log_perubahan_surat LogPerubahanSurat[]
+  permohonan_surat    PermohonanSurat[]
+  dokumen             Dokumen[]
+
+  @@map("config")
+}
+
+// =====================================================================
+// WILAYAH ADMINISTRATIF (Dusun -> RW -> RT)
+// Tabel: tweb_wil_clusterdesa di OpenSID.
+// Konvensi: rt='0' & rw='0' baris dusun; rt='0' & rw!=0 baris RW;
+// rt!=0 baris RT. id_kepala -> NIK kepala dusun/RW/RT.
+// =====================================================================
+
+model Wilayah {
+  id         Int       @id @default(autoincrement())
+  config_id  Int?
+  dusun      String
+  rw         String    @default("0")
+  rt         String    @default("0")
+  id_kepala  String? // NIK kepala
+  urut       Int       @default(0)
+  urut_cetak Int       @default(0)
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+
+  config Config? @relation(fields: [config_id], references: [id], onDelete: SetNull)
+
+  @@index([config_id, dusun])
+  @@index([config_id, rw])
+  @@index([config_id, rt])
+  @@map("wilayah")
+}
+
+// =====================================================================
+// PEMERINTAH DESA (Perangkat / Pamong)
+// Tabel: tweb_desa_pamong di OpenSID.
+// =====================================================================
+
+model Pamong {
+  id             Int       @id @default(autoincrement())
+  config_id      Int?
+  pamong_nama    String
+  pamong_nik     String?
+  pamong_niap    String?
+  pamong_ttd     Int       @default(0) // 1 = penanda tangan a.n
+  pamong_ub      Int       @default(0) // 1 = penanda tangan u.b
+  pamong_status  Int       @default(1) // 1 = aktif, 2 = non-aktif
+  status_pejabat Int       @default(0) // 1 = PJ Kepala Desa
+  id_pend        Int? // tautan ke Penduduk (id)
+  jabatan_id     Int?
+  gelar_depan    String?
+  gelar_belakang String?
+  tempatlahir    String?
+  tanggallahir   DateTime?
+  sex            Int?
+  agama_id       Int?
+  pendidikan_id  Int?
+  no_hp          String?
+  foto           String?
+  media_sosial   String? // JSON: {fb,ig,twitter,wa,...}
+  urutan         Int       @default(0)
+  created_at     DateTime? @default(now())
+  updated_at     DateTime? @updatedAt
+
+  config  Config?     @relation(fields: [config_id], references: [id], onDelete: SetNull)
+  jabatan RefJabatan? @relation(fields: [jabatan_id], references: [id], onDelete: SetNull)
+
+  // Relasi ke modul Surat Menyurat
+  logSurat LogSurat[]
+
+  @@index([config_id, pamong_status])
+  @@map("pamong")
+}
+
+model RefJabatan {
+  id         Int       @id @default(autoincrement())
+  config_id  Int?
+  nama       String
+  jenis      Int       @default(0) // 1=Kades, 2=Sekdes, 0=lainnya
+  tupoksi    String?
+  urut       Int       @default(0)
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+
+  config Config?  @relation(fields: [config_id], references: [id], onDelete: SetNull)
+  pamong Pamong[]
+
+  @@index([config_id])
+  @@map("ref_jabatan")
+}
+
+// =====================================================================
+// STATUS DESA & LEMBAGA DESA
+// (profil_desa sebagai key-value di OpenSID asli)
+// =====================================================================
+
+model ProfilDesa {
+  id         Int       @id @default(autoincrement())
+  config_id  Int?
+  key        String // jenis_tanah, topografi, flora_fauna, status_desa, dll.
+  value      String
+  kategori   String    @default("lainnya") // ekologi | internet | adat | lainnya
+  judul      String
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+
+  config Config? @relation(fields: [config_id], references: [id], onDelete: Cascade)
+
+  @@unique([config_id, key])
+  @@index([config_id, kategori])
+  @@map("profil_desa")
+}
+
+model Lembaga {
+  id         Int       @id @default(autoincrement())
+  config_id  Int?
+  nama       String
+  singkatan  String?
+  ketua      String?
+  sekretaris String?
+  alamat     String?
+  keterangan String?
+  urut       Int       @default(0)
+  enabled    Int       @default(1)
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+
+  config Config? @relation(fields: [config_id], references: [id], onDelete: Cascade)
+
+  @@index([config_id])
+  @@map("lembaga")
+}
+
+model LayananPelanggan {
+  id         Int       @id @default(autoincrement())
+  config_id  Int?
+  nama       String
+  kategori   String? // pengaduan | informasi | permintaan
+  kontak     String?
+  url_form   String?
+  keterangan String?
+  enabled    Int       @default(1)
+  created_at DateTime? @default(now())
+
+  config Config? @relation(fields: [config_id], references: [id], onDelete: Cascade)
+
+  @@index([config_id])
+  @@map("layanan_pelanggan")
+}
+
+model Kerjasama {
+  id              Int       @id @default(autoincrement())
+  config_id       Int?
+  judul           String
+  mitra           String
+  bidang          String?
+  tanggal_mulai   DateTime?
+  tanggal_selesai DateTime?
+  nomor           String?
+  keterangan      String?
+  enabled         Int       @default(1)
+  created_at      DateTime? @default(now())
+
+  config Config? @relation(fields: [config_id], references: [id], onDelete: Cascade)
+
+  @@index([config_id])
+  @@map("kerjasama")
+}
+
+// =====================================================================
+// ARTIKEL / BERITA
+// =====================================================================
+
+model Artikel {
+  id             Int       @id @default(autoincrement())
+  config_id      Int?
+  judul          String
+  isi            String
+  slug           String?
+  gambar         String?
+  gambar1        String?
+  gambar2        String?
+  gambar3        String?
+  dokumen        String?
+  link_dokumen   String?
+  tgl_upload     DateTime  @default(now())
+  tgl_publish    DateTime?
+  enabled        Int       @default(1)
+  headline       Int       @default(0)
+  slider         Int       @default(0)
+  tipe           String    @default("dinamis")
+  id_kategori    Int?
+  id_user        Int?
+  hit            Int       @default(0)
+  boleh_komentar Int       @default(1)
+  created_at     DateTime? @default(now())
+  updated_at     DateTime? @updatedAt
+
+  config   Config?    @relation(fields: [config_id], references: [id], onDelete: SetNull)
+  kategori Kategori?  @relation(fields: [id_kategori], references: [id], onDelete: SetNull)
+  author   User?      @relation(fields: [id_user], references: [id], onDelete: SetNull)
+  komentar Komentar[]
+
+  @@index([config_id, enabled, tgl_upload])
+  @@index([slug])
+  @@map("artikel")
+}
+
+model Kategori {
+  id         Int       @id @default(autoincrement())
+  config_id  Int?
+  kategori   String
+  slug       String?
+  tipe       Int       @default(1)
+  urut       Int       @default(0)
+  enabled    Int       @default(1)
+  parent_id  Int?
+  created_at DateTime? @default(now())
+
+  config   Config?    @relation(fields: [config_id], references: [id], onDelete: SetNull)
+  parent   Kategori?  @relation("KategoriParent", fields: [parent_id], references: [id], onDelete: SetNull)
+  children Kategori[] @relation("KategoriParent")
+  artikel  Artikel[]
+
+  @@map("kategori")
+}
+
+model Komentar {
+  id         Int      @id @default(autoincrement())
+  config_id  Int?
+  id_artikel Int
+  owner      String
+  email      String?
+  komentar   String
+  enabled    Int      @default(1)
+  tgl_upload DateTime @default(now())
+
+  config  Config? @relation(fields: [config_id], references: [id], onDelete: SetNull)
+  artikel Artikel @relation(fields: [id_artikel], references: [id], onDelete: Cascade)
+
+  @@index([id_artikel])
+  @@map("komentar")
+}
+
+// =====================================================================
+// PENGGUNA
+// =====================================================================
+
+model User {
+  id         Int       @id @default(autoincrement())
+  config_id  Int?
+  username   String    @unique
+  password   String
+  id_grup    Int?
+  pamong_id  Int?
+  email      String?
+  active     Int       @default(1)
+  nama       String
+  phone      String?
+  foto       String?
+  last_login DateTime?
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+
+  config  Config?   @relation(fields: [config_id], references: [id], onDelete: SetNull)
+  artikel Artikel[]
+
+  @@map("user")
+}
+
+// =====================================================================
+// WIDGET SIDEBAR
+// =====================================================================
+
+model Widget {
+  id         Int       @id @default(autoincrement())
+  config_id  Int?
+  judul      String
+  isi        String
+  enabled    Int       @default(1)
+  urut       Int       @default(0)
+  created_at DateTime? @default(now())
+
+  config Config? @relation(fields: [config_id], references: [id], onDelete: SetNull)
+
+  @@map("widget")
+}
+
+// =====================================================================
+// SETTING (key-value configuration)
+// =====================================================================
+
+model Setting {
+  id         Int       @id @default(autoincrement())
+  key        String    @unique
+  value      String
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+
+  @@map("setting")
+}
+
+// =====================================================================
+// MEDIA SOSIAL (untuk footer)
+// =====================================================================
+
+model MediaSosial {
+  id        Int    @id @default(autoincrement())
+  config_id Int?
+  nama      String
+  url       String
+  ikon      String
+  enabled   Int    @default(1)
+
+  @@map("media_sosial")
+}
+
+// =====================================================================
+// GALERI
+// =====================================================================
+
+model Galery {
+  id         Int       @id @default(autoincrement())
+  config_id  Int?
+  nama       String
+  parent_id  Int?
+  enabled    Int       @default(1)
+  slider     Int       @default(0)
+  urut       Int       @default(0)
+  created_at DateTime? @default(now())
+
+  @@map("galery")
+}
+
+// =====================================================================
+// KEPENDUDUKAN
+// Kontrak format: 43 kolom dari "format-impor-excel.xlsm" (sheet
+// "Data Penduduk") + sheet "Kode Data" berisi 11 tabel referensi.
+// Semua field *_id merujuk ke tabel Ref* (master) yang stabil.
+// =====================================================================
+
+model Keluarga {
+  id         Int       @id @default(autoincrement())
+  config_id  Int?
+  no_kk      String    @unique
+  alamat     String?
+  dusun      String?
+  rw         String?
+  rt         String?
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+
+  config  Config?    @relation(fields: [config_id], references: [id], onDelete: SetNull)
+  anggota Penduduk[] @relation("AnggotaKeluarga")
+
+  @@index([config_id])
+  @@map("keluarga")
+}
+
+model Penduduk {
+  id                   Int       @id @default(autoincrement())
+  config_id            Int?
+  // Identitas KK
+  no_kk                String?
+  // Identitas diri
+  nik                  String    @unique
+  nama                 String
+  sex                  Int? // 1=Laki-laki, 2=Perempuan (mengikuti tweb_penduduk sex)
+  tempatlahir          String?
+  tanggallahir         DateTime?
+  // Demografi (ID ke tabel Ref)
+  agama_id             Int?
+  pendidikan_kk_id     Int?
+  pendidikan_sedang_id Int?
+  pekerjaan_id         Int?
+  status_kawin         Int?
+  kk_level             Int?
+  warganegara_id       Int?
+  golongan_darah_id    Int?
+  cacat_id             Int?
+  cara_kb_id           Int?
+  hamil                Int? // 0/1
+  ktp_el               Int? // 0/1
+  status_rekam         Int?
+  status_dasar         Int?
+  id_asuransi          Int?
+  // Keluarga
+  ayah_nik             String?
+  nama_ayah            String?
+  ibu_nik              String?
+  nama_ibu             String?
+  // Dokumen
+  akta_lahir           String?
+  dokumen_pasport      String?
+  tanggal_akhir_paspor DateTime?
+  dokumen_kitas        String?
+  akta_perkawinan      String?
+  tanggalperkawinan    DateTime?
+  akta_perceraian      String?
+  tanggalperceraian    DateTime?
+  // Lainnya
+  alamat_sekarang      String?
+  suku                 String?
+  tag_id_card          String?
+  no_asuransi          String?
+  lat                  String?
+  lng                  String?
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+
+  config   Config?    @relation(fields: [config_id], references: [id], onDelete: SetNull)
+  keluarga Keluarga?  @relation("AnggotaKeluarga", fields: [no_kk], references: [no_kk], onDelete: SetNull)
+  ayah     Penduduk?  @relation("Ayah", fields: [ayah_nik], references: [nik], onDelete: SetNull)
+  ibu      Penduduk?  @relation("Ibu", fields: [ibu_nik], references: [nik], onDelete: SetNull)
+  anak     Penduduk[] @relation("Ayah")
+  anak_ibu Penduduk[] @relation("Ibu")
+
+  agama             RefAgama?         @relation(fields: [agama_id], references: [id], onDelete: SetNull)
+  pendidikan_kk     RefPendidikan?    @relation("PendidikanKK", fields: [pendidikan_kk_id], references: [id], onDelete: SetNull)
+  pendidikan_sedang RefPendidikan?    @relation("PendidikanSedang", fields: [pendidikan_sedang_id], references: [id], onDelete: SetNull)
+  pekerjaan         RefPekerjaan?     @relation(fields: [pekerjaan_id], references: [id], onDelete: SetNull)
+  kk_level_ref      RefHubunganKK?    @relation(fields: [kk_level], references: [id], onDelete: SetNull)
+  warganegara       RefWarganegara?   @relation(fields: [warganegara_id], references: [id], onDelete: SetNull)
+  golongan_darah    RefGolonganDarah? @relation(fields: [golongan_darah_id], references: [id], onDelete: SetNull)
+  cacat             RefCacat?         @relation(fields: [cacat_id], references: [id], onDelete: SetNull)
+  cara_kb           RefCaraKB?        @relation(fields: [cara_kb_id], references: [id], onDelete: SetNull)
+  status_dasar_ref  RefStatusDasar?   @relation(fields: [status_dasar], references: [id], onDelete: SetNull)
+  asuransi          RefAsuransi?      @relation(fields: [id_asuransi], references: [id], onDelete: SetNull)
+
+  // Relasi ke modul Surat Menyurat
+  logSurat        LogSurat[]
+  permohonanSurat PermohonanSurat[]
+  dokumen         Dokumen[]
+
+  @@index([config_id, no_kk])
+  @@index([config_id, nama])
+  @@index([sex])
+  @@map("penduduk")
+}
+
+// ---- Tabel referensi (master) ----------------------------------------
+// Format dari sheet "Kode Data" di format-impor-excel.xlsm.
+
+model RefAgama {
+  id         Int        @id
+  nama       String
+  created_at DateTime?  @default(now())
+  penduduk   Penduduk[]
+
+  @@map("ref_agama")
+}
+
+model RefPendidikan {
+  id              Int        @id
+  nama            String
+  created_at      DateTime?  @default(now())
+  penduduk_kk     Penduduk[] @relation("PendidikanKK")
+  penduduk_sedang Penduduk[] @relation("PendidikanSedang")
+
+  @@map("ref_pendidikan")
+}
+
+model RefPekerjaan {
+  id         Int        @id
+  nama       String
+  created_at DateTime?  @default(now())
+  penduduk   Penduduk[]
+
+  @@map("ref_pekerjaan")
+}
+
+model RefStatusKawin {
+  id         Int       @id
+  nama       String
+  created_at DateTime? @default(now())
+
+  @@map("ref_status_kawin")
+}
+
+model RefHubunganKK {
+  id         Int        @id
+  nama       String
+  created_at DateTime?  @default(now())
+  penduduk   Penduduk[]
+
+  @@map("ref_hubungan_kk")
+}
+
+model RefWarganegara {
+  id         Int        @id
+  nama       String
+  created_at DateTime?  @default(now())
+  penduduk   Penduduk[]
+
+  @@map("ref_warganegara")
+}
+
+model RefGolonganDarah {
+  id         Int        @id
+  nama       String
+  created_at DateTime?  @default(now())
+  penduduk   Penduduk[]
+
+  @@map("ref_golongan_darah")
+}
+
+model RefCacat {
+  id         Int        @id
+  nama       String
+  created_at DateTime?  @default(now())
+  penduduk   Penduduk[]
+
+  @@map("ref_cacat")
+}
+
+model RefCaraKB {
+  id         Int        @id
+  nama       String
+  created_at DateTime?  @default(now())
+  penduduk   Penduduk[]
+
+  @@map("ref_cara_kb")
+}
+
+model RefStatusDasar {
+  id         Int        @id
+  nama       String
+  created_at DateTime?  @default(now())
+  penduduk   Penduduk[]
+
+  @@map("ref_status_dasar")
+}
+
+model RefAsuransi {
+  id         Int        @id
+  nama       String
+  created_at DateTime?  @default(now())
+  penduduk   Penduduk[]
+
+  @@map("ref_asuransi")
+}
+
+// =====================================================================
+// SURAT MENYURAT
+// Tabel mengikuti pola OpenSID asli (lihat i:\surat_sid\opensid-original\)
+//
+// Relasi utama:
+//   config  ──┬──► SuratFormat (config_id)
+//             ├──► LampiranSurat
+//             ├──► LogSurat ─┬─► SuratFormat (id_format_surat)
+//             │             ├─► Penduduk (id_pend)
+//             │             └─► Pamong (id_pamong)
+//             ├──► PermohonanSurat ─┬─► Penduduk (id_pemohon)
+//             │                     └─► SuratFormat (id_surat)
+//             ├──► Dokumen ─┬─► Penduduk (id_pend)
+//             │            ├─► SyaratSurat (id_syarat)
+//             │            └─► Dokumen (id_parent, self)
+//             ├──► RefSyaratSurat (referensi M:N via JSON di SuratFormat)
+//             └──► LogTolak
+//
+// Catatan:
+// - config_id Int? di SEMUA tabel (multi-tenant siap)
+// - FK ke config.id dengan onDelete: Cascade
+// - Composite unique (config_id, ...) untuk keunikan per desa
+// - Snapshot fields nama_pamong, nama_jabatan di LogSurat
+//   agar histori tidak berubah saat master Pamong/Jabatan diedit
+// - M:N SuratFormat ↔ SyaratSurat via JSON string syarat_surat
+//   (bukan tabel pivot) — sesuai pola OpenSID
+// =====================================================================
+
+// ---- Tabel referensi ----------------------------------------------
+
+/// Referensi jenis syarat surat.
+/// Dipakai oleh:
+/// - M:N ke SuratFormat via JSON string `syarat_surat`
+/// - 1:N ke Dokumen via kolom `id_syarat`
+model RefSyaratSurat {
+  id              Int       @id @default(autoincrement())
+  config_id       Int?
+  ref_syarat_nama String
+  created_at      DateTime? @default(now())
+
+  config  Config?   @relation(fields: [config_id], references: [id], onDelete: Cascade)
+  dokumen Dokumen[]
+
+  @@unique([config_id, ref_syarat_nama])
+  @@index([config_id])
+  @@map("ref_syarat_surat")
+}
+
+// ---- Template surat -----------------------------------------------
+
+/// Template/format surat (HTML atau RTF).
+/// Kolom `syarat_surat` menyimpan JSON array id SyaratSurat
+/// untuk relasi M:N tanpa tabel pivot.
+model SuratFormat {
+  id                       Int     @id @default(autoincrement())
+  config_id                Int?
+  nama                     String
+  url_surat                String?
+  kode_surat               String?
+  lampiran                 String?
+  // Tanda pengaman
+  kunci                    Int     @default(0)
+  favorit                  Int     @default(0)
+  // Jenis: 2 = sistem (template default OpenSID), lain = kustom desa
+  jenis                    Int     @default(2)
+  // Layanan mandiri
+  mandiri                  Int     @default(0)
+  // Masa berlaku
+  masa_berlaku             Int?
+  satuan_masa_berlaku      String?
+  // QR Code & TTE
+  qr_code                  Int     @default(0)
+  qr_code_tte              Int     @default(0)
+  logo_garuda              Int     @default(0)
+  // Cetak
+  kecamatan                Int     @default(1)
+  // Relasi M:N (disimpan JSON string id syarat)
+  // Contoh: "[1,2,3]"
+  syarat_surat             String?
+  // Template
+  template                 String?
+  template_desa            String?
+  form_isian               String?
+  kode_isian               String?
+  // Layout
+  orientasi                String?
+  ukuran                   String?
+  margin                   String?
+  margin_global            Int     @default(1)
+  footer                   Int     @default(1)
+  header                   Int     @default(1)
+  // Penomoran
+  format_nomor             String?
+  format_nomor_global      Int     @default(1)
+  // Penduduk berulang
+  sumber_penduduk_berulang Int     @default(0)
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+
+  config          Config?           @relation(fields: [config_id], references: [id], onDelete: Cascade)
+  logSurat        LogSurat[]
+  permohonanSurat PermohonanSurat[]
+
+  @@unique([config_id, url_surat])
+  @@index([config_id, jenis])
+  @@map("tweb_surat_format")
+}
+
+/// Template lampiran surat.
+model LampiranSurat {
+  id            Int     @id @default(autoincrement())
+  config_id     Int?
+  slug          String?
+  nama          String
+  jenis         Int     @default(2)
+  template      String?
+  template_desa String?
+  status        Int     @default(1)
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+
+  config Config? @relation(fields: [config_id], references: [id], onDelete: Cascade)
+
+  @@unique([config_id, slug])
+  @@index([config_id])
+  @@map("lampiran_surat")
+}
+
+// ---- Arsip surat -------------------------------------------------
+
+/// Log/catatan surat yang dicetak atau akan dicetak.
+/// SoftDeletes: kolom `deleted_at` (Laravel-style, sesuai pola OpenSID).
+///
+/// Field snapshot (dipertahankan walau master diedit):
+/// - nama_pamong, nama_jabatan (Pamong)
+/// - nama_surat, kode_surat (SuratFormat)
+model LogSurat {
+  id                  Int       @id @default(autoincrement())
+  config_id           Int?
+  // Relasi master
+  id_format_surat     Int?
+  id_pend             Int?
+  id_pamong           Int?
+  id_user             Int?
+  // Snapshot field (tidak boleh hilang saat master diedit)
+  nama_pamong         String?
+  nama_jabatan        String?
+  nama_surat          String?
+  kode_surat          String?
+  // Penomoran & tanggal
+  tanggal             DateTime?
+  bulan               String?
+  tahun               String?
+  no_surat            String?
+  lampiran            String?
+  // Non-warga
+  nik_non_warga       String?
+  nama_non_warga      String?
+  // Metadata
+  keterangan          String?
+  lokasi_arsip        String?
+  urls_id             String?
+  // Status: 0=KONSEP, 1=CETAK, -1=TOLAK
+  status              Int       @default(0)
+  log_verifikasi      String?
+  // TTE & verifikasi berjenjang
+  tte                 Int       @default(0)
+  verifikasi_operator Int       @default(0)
+  verifikasi_kades    Int       @default(0)
+  verifikasi_sekdes   Int       @default(0)
+  // Isi surat (JSON: hasil render form isian)
+  isi_surat           String?
+  kecamatan           String?
+  // Soft delete (Laravel-style)
+  deleted_at          DateTime?
+  // Pemohon tambahan
+  pemohon             String?
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+
+  config      Config?      @relation(fields: [config_id], references: [id], onDelete: Cascade)
+  formatSurat SuratFormat? @relation(fields: [id_format_surat], references: [id], onDelete: SetNull)
+  penduduk    Penduduk?    @relation(fields: [id_pend], references: [id], onDelete: SetNull)
+  pamong      Pamong?      @relation(fields: [id_pamong], references: [id], onDelete: SetNull)
+  tolak       LogTolak[]
+
+  @@unique([urls_id])
+  @@index([config_id, status])
+  @@index([config_id, id_format_surat])
+  @@index([config_id, id_pend])
+  @@index([config_id, tanggal])
+  @@index([config_id, no_surat])
+  @@index([deleted_at])
+  @@map("log_surat")
+}
+
+/// Alasan penolakan permohonan surat.
+model LogTolak {
+  id         Int       @id @default(autoincrement())
+  config_id  Int?
+  id_surat   Int
+  nama       String?
+  alasan     String?
+  created_at DateTime? @default(now())
+  created_by Int?
+
+  config   Config?  @relation(fields: [config_id], references: [id], onDelete: Cascade)
+  logSurat LogSurat @relation(fields: [id_surat], references: [id], onDelete: Cascade)
+
+  @@index([config_id, id_surat])
+  @@map("log_tolak")
+}
+
+/// Audit perubahan LogSurat.
+model LogPerubahanSurat {
+  id           Int       @id @default(autoincrement())
+  config_id    Int?
+  log_surat_id Int?
+  field        String?
+  nilai_lama   String?
+  nilai_baru   String?
+  created_at   DateTime? @default(now())
+  created_by   Int?
+
+  config Config? @relation(fields: [config_id], references: [id], onDelete: Cascade)
+
+  @@index([config_id, log_surat_id])
+  @@map("log_perubahan_surat")
+}
+
+// ---- Permohonan dari Layanan Mandiri -----------------------------
+
+/// Permohonan surat dari Layanan Mandiri warga.
+///
+/// Status workflow:
+/// 0 = BELUM_LENGKAP
+/// 1 = SEDANG_DIPERIKSA
+/// 2 = MENUNGGU_TANDA_TANGAN
+/// 3 = SIAP_DIAMBIL
+/// 4 = SUDAH_DIAMBIL
+/// 5 = DIBATALKAN
+model PermohonanSurat {
+  id          Int     @id @default(autoincrement())
+  config_id   Int?
+  id_pemohon  Int?
+  id_surat    Int?
+  isian_form  String?
+  status      Int     @default(0)
+  alasan      String?
+  keterangan  String?
+  no_hp_aktif String?
+  syarat      String?
+  no_antrian  String?
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+
+  config  Config?      @relation(fields: [config_id], references: [id], onDelete: Cascade)
+  pemohon Penduduk?    @relation(fields: [id_pemohon], references: [id], onDelete: SetNull)
+  surat   SuratFormat? @relation(fields: [id_surat], references: [id], onDelete: SetNull)
+
+  @@index([config_id, status])
+  @@index([config_id, id_pemohon])
+  @@index([config_id, id_surat])
+  @@map("permohonan_surat")
+}
+
+// ---- Dokumen / Lampiran -----------------------------------------
+
+/// Dokumen: bisa milik penduduk (id_pend) atau global.
+/// Soft delete via kolom `deleted` (0/1, bukan SoftDeletes).
+/// Self-reference untuk folder parent (`id_parent`).
+model Dokumen {
+  id                   Int       @id @default(autoincrement())
+  config_id            Int?
+  satuan               String?
+  nama                 String
+  enabled              Int       @default(1)
+  tgl_upload           DateTime? @default(now())
+  id_pend              Int?
+  id_syarat            Int?
+  kategori_info_publik Int       @default(0)
+  deleted              Int       @default(0)
+  id_parent            Int?
+  dok_warga            Int       @default(0)
+  lokasi_arsip         String?
+  attr                 String?
+  tipe                 String?
+  url                  String?
+  tahun                String?
+  kategori             Int       @default(1)
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+
+  config   Config?         @relation(fields: [config_id], references: [id], onDelete: Cascade)
+  penduduk Penduduk?       @relation(fields: [id_pend], references: [id], onDelete: SetNull)
+  syarat   RefSyaratSurat? @relation(fields: [id_syarat], references: [id], onDelete: SetNull)
+  parent   Dokumen?        @relation("DokumenParent", fields: [id_parent], references: [id], onDelete: SetNull)
+  children Dokumen[]       @relation("DokumenParent")
+
+  @@index([config_id, deleted])
+  @@index([config_id, id_pend])
+  @@index([config_id, id_syarat])
+  @@index([config_id, kategori])
+  @@index([id_parent])
+  @@map("dokumen")
+}

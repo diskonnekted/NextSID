@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+
+# Build output
+.next/
+out/
+build/
+dist/
+*.tsbuildinfo
+
+# Env (tidak di-commit)
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Prisma DB lokal
+prisma/dev.db
+prisma/dev.db-journal
+prisma/migrations/dev.db*
+
+# Upload lokal (file user)
+public/uploads/
+!public/uploads/.gitkeep
+
+# Bahan & referensi pribadi
+bahan/
+test_template.xlsx
+
+# next.js
+next-env.d.ts
