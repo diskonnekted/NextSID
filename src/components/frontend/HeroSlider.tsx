@@ -56,13 +56,13 @@ export function HeroSlider({ slides }: { slides: Slide[] }) {
         ))}
 
         <div className="absolute inset-x-0 bottom-0 p-6 sm:p-10 lg:p-14">
-          <p className="meta mb-3 text-paper/80">Sorotan · {indexAktif + 1} / {slides.length}</p>
-          <Link href={`/artikel/${slides[indexAktif].slug ?? slides[indexAktif].id}`}>
-            <h2 className="max-w-3xl font-serif text-display-sm leading-tight sm:text-display-md lg:text-display-lg">
-              {slides[indexAktif].judul}
-            </h2>
-          </Link>
-        </div>
+                <p className="meta mb-3 text-paper/80">Sorotan · {indexAktif + 1} / {slides.length}</p>
+                <Link href={`/artikel/${slides[indexAktif].slug ?? slides[indexAktif].id}`}>
+                  <h2 className="max-w-2xl font-serif text-xl leading-tight sm:text-2xl lg:text-3xl line-clamp-3">
+                    {slides[indexAktif].judul}
+                  </h2>
+                </Link>
+              </div>
       </div>
 
       {slides.length > 1 ? (

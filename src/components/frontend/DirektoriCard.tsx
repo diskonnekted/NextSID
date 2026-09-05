@@ -102,38 +102,38 @@ export function DirektoriCard({ item, varian = "kartu" }: Props) {
 
   // kartu
   return (
-    <article className="group flex h-full flex-col border border-ink/15 bg-paper transition-colors hover:border-clay">
+    <article className="group flex h-full flex-col overflow-hidden border border-ink/15 bg-paper transition-colors hover:border-clay">
       {/* Plate atas: inisial / ikon. TownPress pakai foto logo; kita pakai
           plate monogram supaya kartu tetap informatif walau tanpa gambar. */}
-      <div className="flex items-start gap-4 border-b border-ink/10 p-5">
+      <div className="flex items-start gap-3 border-b border-ink/10 p-4">
         <div
-          className="flex h-12 w-12 shrink-0 items-center justify-center border border-ink/15 bg-paper-dim font-serif text-xl text-clay"
+          className="flex h-11 w-11 shrink-0 items-center justify-center border border-ink/15 bg-paper-dim font-serif text-lg text-clay"
           aria-hidden="true"
         >
           {huruf(item.judul)}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="meta">{item.kategori}</p>
+          <p className="meta truncate">{item.kategori}</p>
           <Link href={href}>
-            <h3 className="font-serif text-lg leading-snug group-hover:text-clay">
+            <h3 className="font-serif text-base leading-snug break-words line-clamp-2 group-hover:text-clay">
               {item.judul}
             </h3>
           </Link>
         </div>
       </div>
       {/* Body: alamat + kontak */}
-      <div className="flex flex-1 flex-col justify-between gap-3 p-5 text-sm text-ink-soft">
+      <div className="flex flex-1 flex-col justify-between gap-3 p-4 text-sm text-ink-soft">
         {item.alamat ? (
-          <p className="line-clamp-2">{item.alamat}</p>
+          <p className="break-words line-clamp-2">{item.alamat}</p>
         ) : (
           <p className="text-ink-muted">Lokasi belum tercatat.</p>
         )}
-        {item.kontak ? <p className="meta">{item.kontak}</p> : null}
+        {item.kontak ? <p className="meta truncate">{item.kontak}</p> : null}
       </div>
       {/* Footer: tautan detail ala TownPress */}
       <Link
         href={href}
-        className="meta border-t border-ink/10 px-5 py-3 normal-case tracking-normal hover:bg-paper-dim"
+        className="meta border-t border-ink/10 px-4 py-3 normal-case tracking-normal hover:bg-paper-dim"
       >
         Buka Detail →
       </Link>
