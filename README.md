@@ -109,11 +109,10 @@ komunitas. NextSID bukan pengganti, melainkan **lanjutan alami**:
 
 ## Tangkapan Layar
 
-> Slot untuk screenshot — letakkan di `docs/screenshots/` lalu referensikan di sini.
-
-| Beranda | Dasbor Admin |
-|---|---|
-| _(coming soon)_ | _(coming soon)_ |
+| Dasbor Admin | Beranda Publik |
+|:---:|:---:|
+| ![Dasbor Admin](docs/screenshots/dashboard.png) | ![Beranda Publik](docs/screenshots/beranda.png) |
+| _Pusat pengelolaan data dan konten desa._ | _Portal publik dengan hero banner & slider headline._ |
 
 ## Teknologi
 
