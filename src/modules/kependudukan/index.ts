@@ -212,6 +212,113 @@ export async function ambilRekapRumahTangga(): Promise<RekapRumahTangga> {
 }
 
 // =====================================================================
+// Daftar KK per Dusun / per RW (untuk halaman drill-down Rumah Tangga).
+// =====================================================================
+
+export type BarisKKRumahTangga = {
+  no_kk: string;
+  alamat: string | null;
+  dusun: string | null;
+  rw: string | null;
+  rt: string | null;
+  jumlahAnggota: number;
+};
+
+export type HasilKK = {
+  baris: BarisKKRumahTangga[];
+  total: number;
+};
+
+export async function ambilDaftarKKByDusun(
+  dusun: string,
+  halaman: number,
+  perHalaman: number,
+): Promise<HasilKK> {
+  const skip = (Math.max(1, halaman) - 1) * perHalaman;
+  const where = { dusun };
+
+  const [barisRaw, total] = await Promise.all([
+    prisma.keluarga.findMany({
+      where,
+      select: {
+        no_kk: true,
+        alamat: true,
+        dusun: true,
+        rw: true,
+        rt: true,
+        _count: { select: { anggota: true } },
+      },
+      orderBy: [{ rw: "asc" }, { rt: "asc" }, { no_kk: "asc" }],
+      skip,
+      take: perHalaman,
+    }),
+    prisma.keluarga.count({ where }),
+  ]);
+
+  return {
+    baris: barisRaw.map((b) => ({
+      no_kk: b.no_kk,
+      alamat: b.alamat,
+      dusun: b.dusun,
+      rw: b.rw,
+      rt: b.rt,
+      jumlahAnggota: b._count.anggota,
+    })),
+    total,
+  };
+}
+
+export async function ambilDaftarKKByRW(
+  dusun: string,
+  rw: string,
+  halaman: number,
+  perHalaman: number,
+): Promise<HasilKK> {
+  const skip = (Math.max(1, halaman) - 1) * perHalaman;
+  const where = { dusun, rw };
+
+  const [barisRaw, total] = await Promise.all([
+    prisma.keluarga.findMany({
+      where,
+      select: {
+        no_kk: true,
+        alamat: true,
+        dusun: true,
+        rw: true,
+        rt: true,
+        _count: { select: { anggota: true } },
+      },
+      orderBy: [{ rt: "asc" }, { no_kk: "asc" }],
+      skip,
+      take: perHalaman,
+    }),
+    prisma.keluarga.count({ where }),
+  ]);
+
+  return {
+    baris: barisRaw.map((b) => ({
+      no_kk: b.no_kk,
+      alamat: b.alamat,
+      dusun: b.dusun,
+      rw: b.rw,
+      rt: b.rt,
+      jumlahAnggota: b._count.anggota,
+    })),
+    total,
+  };
+}
+
+/** Daftar dusun unik untuk navigasi. */
+export async function ambilDaftarDusun(): Promise<string[]> {
+  const rows = await prisma.keluarga.findMany({
+    select: { dusun: true },
+    distinct: ["dusun"],
+    orderBy: { dusun: "asc" },
+  });
+  return rows.map((r) => r.dusun ?? "").filter((d) => d.length > 0);
+}
+
+// =====================================================================
 // Rekap Kelompok per Pekerjaan.
 // Dipakai oleh halaman /admin/kelompok.
 // =====================================================================
