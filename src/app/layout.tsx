@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Inter, Fraunces } from "next/font/google";
 import "./globals.css";
-import { ambilThemeAktif } from "@/lib/theme";
+import { ambilThemeAktif, ambilModeAktif } from "@/lib/theme";
+import { PRE_HYDRATION_SCRIPT } from "@/lib/theme-switcher";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -31,6 +32,8 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const theme = await ambilThemeAktif();
+  const mode = await ambilModeAktif();
+  const themeKey = theme.key;
 
   return (
     <html
@@ -40,8 +43,16 @@ export default async function RootLayout({
       // React tidak mengeluarkan warning "Extra attributes from the server"
       // untuk atribut yang bukan berasal dari aplikasi.
       suppressHydrationWarning
+      data-theme={themeKey}
+      data-mode={mode}
       className={`${inter.variable} ${fraunces.variable}`}
     >
+      <head>
+        {/* Pre-hydration script: set data-theme + data-mode SEBELUM React mount
+            untuk mencegah flash of wrong theme saat switch. Aman dieksekusi
+            berulang karena idempotent (cuma baca cookie + set attribute). */}
+        <script dangerouslySetInnerHTML={{ __html: PRE_HYDRATION_SCRIPT }} />
+      </head>
       <body className="min-h-screen bg-paper font-sans text-ink antialiased">
         <theme.partials.Header />
         <main>{children}</main>
