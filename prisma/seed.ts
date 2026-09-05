@@ -472,7 +472,7 @@ async function main() {
   const jabKasi = await prisma.refJabatan.create({
     data: { config_id: config.id, nama: "Kasi Pemerintahan", jenis: 0, tupoksi: "Membina administrasi pemerintahan.", urut: 4 },
   });
-  const jabKadus = await prisma.refJabatan.create({
+  await prisma.refJabatan.create({
     data: { config_id: config.id, nama: "Kepala Dusun", jenis: 0, tupoksi: "Mengoordinasikan kegiatan di tingkat dusun.", urut: 5 },
   });
 
