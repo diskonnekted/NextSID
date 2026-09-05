@@ -767,6 +767,225 @@ export type DaftarKKResult = {
   totalHalaman: number;
 };
 
+// =====================================================================
+// Modul Kelompok.
+// "Kelompok" di sini adalah pengelompokan warga berdasarkan salah satu
+// dari 6 referensi demografis (pekerjaan, pendidikan, agama, status
+// kawin, kewarganegaraan, golongan darah). Dipakai oleh halaman
+// /admin/kelompok (tab navigasi) dan /admin/kelompok/[jenis]/[id]
+// (detail per kelompok + daftar anggotanya).
+// =====================================================================
+
+export const JENIS_KELOMPOK = [
+  "pekerjaan",
+  "pendidikan",
+  "agama",
+  "status-kawin",
+  "warganegara",
+  "golongan-darah",
+] as const;
+export type JenisKelompok = (typeof JENIS_KELOMPOK)[number];
+
+export const LABEL_JENIS_KELOMPOK: Record<JenisKelompok, string> = {
+  pekerjaan: "Pekerjaan",
+  pendidikan: "Pendidikan",
+  agama: "Agama",
+  "status-kawin": "Status Kawin",
+  warganegara: "Kewarganegaraan",
+  "golongan-darah": "Golongan Darah",
+};
+
+// Pemetaan JenisKelompok → (model Ref, field id di Penduduk, field nama di ref).
+const PETA_JENIS = {
+  pekerjaan: { idField: "pekerjaan_id" as const, label: "Pekerjaan" },
+  pendidikan: { idField: "pendidikan_kk_id" as const, label: "Pendidikan" },
+  agama: { idField: "agama_id" as const, label: "Agama" },
+  "status-kawin": { idField: "status_kawin" as const, label: "Status Kawin" },
+  warganegara: { idField: "warganegara_id" as const, label: "Kewarganegaraan" },
+  "golongan-darah": { idField: "golongan_darah_id" as const, label: "Golongan Darah" },
+};
+
+async function ambilDaftarRef(jenis: JenisKelompok): Promise<Array<{ id: number; nama: string }>> {
+  switch (jenis) {
+    case "pekerjaan":
+      return prisma.refPekerjaan.findMany({
+        orderBy: { nama: "asc" },
+        select: { id: true, nama: true },
+      });
+    case "pendidikan":
+      return prisma.refPendidikan.findMany({
+        orderBy: { nama: "asc" },
+        select: { id: true, nama: true },
+      });
+    case "agama":
+      return prisma.refAgama.findMany({
+        orderBy: { nama: "asc" },
+        select: { id: true, nama: true },
+      });
+    case "status-kawin":
+      return prisma.refStatusKawin.findMany({
+        orderBy: { nama: "asc" },
+        select: { id: true, nama: true },
+      });
+    case "warganegara":
+      return prisma.refWarganegara.findMany({
+        orderBy: { nama: "asc" },
+        select: { id: true, nama: true },
+      });
+    case "golongan-darah":
+      return prisma.refGolonganDarah.findMany({
+        orderBy: { nama: "asc" },
+        select: { id: true, nama: true },
+      });
+  }
+}
+
+export type BarisKelompok = {
+  id: number;
+  nama: string;
+  total: number;
+  laki: number;
+  perempuan: number;
+  persen: number;
+};
+
+export type RekapKelompokResult = {
+  jenis: JenisKelompok;
+  label: string;
+  totalPenduduk: number;
+  baris: BarisKelompok[];
+};
+
+// Ambil rekap kelompok generik untuk satu jenis.
+// Mengembalikan baris berisi: id kelompok, nama, total anggota + JK, persen.
+export async function ambilRekapKelompok(jenis: JenisKelompok): Promise<RekapKelompokResult> {
+  const peta = PETA_JENIS[jenis];
+  const refs = await ambilDaftarRef(jenis);
+  const totalPenduduk = await prisma.penduduk.count();
+
+  const idField = peta.idField;
+
+  const baris = await Promise.all(
+    refs.map(async (r) => {
+      const where = { [idField]: r.id };
+      const [semua, laki, perempuan] = await Promise.all([
+        prisma.penduduk.count({ where }),
+        prisma.penduduk.count({ where: { ...where, sex: 1 } }),
+        prisma.penduduk.count({ where: { ...where, sex: 2 } }),
+      ]);
+      return {
+        id: r.id,
+        nama: r.nama,
+        total: semua,
+        laki,
+        perempuan,
+        persen: totalPenduduk > 0 ? Number(((semua / totalPenduduk) * 100).toFixed(1)) : 0,
+      };
+    }),
+  );
+
+  return {
+    jenis,
+    label: peta.label,
+    totalPenduduk,
+    baris,
+  };
+}
+
+export type InfoKelompok = {
+  jenis: JenisKelompok;
+  id: number;
+  nama: string;
+  total: number;
+  laki: number;
+  perempuan: number;
+};
+
+// Ambil info 1 kelompok (nama + komposisi). Return null jika id tidak ada.
+export async function ambilInfoKelompok(
+  jenis: JenisKelompok,
+  id: number,
+): Promise<InfoKelompok | null> {
+  const refs = await ambilDaftarRef(jenis);
+  const ref = refs.find((r) => r.id === id);
+  if (!ref) return null;
+
+  const where = { [PETA_JENIS[jenis].idField]: id };
+  const [total, laki, perempuan] = await Promise.all([
+    prisma.penduduk.count({ where }),
+    prisma.penduduk.count({ where: { ...where, sex: 1 } }),
+    prisma.penduduk.count({ where: { ...where, sex: 2 } }),
+  ]);
+
+  return { jenis, id, nama: ref.nama, total, laki, perempuan };
+}
+
+export type DaftarAnggotaKelompokArgs = {
+  jenis: JenisKelompok;
+  id: number;
+  halaman?: number;
+  perHalaman?: number;
+};
+
+export type BarisAnggotaKelompok = {
+  id: number;
+  nik: string;
+  nama: string;
+  sex: number | null;
+  tempatlahir: string | null;
+  tanggallahir: Date | null;
+  no_kk: string | null;
+  hubungan_kk: string | null;
+};
+
+export type DaftarAnggotaKelompokResult = {
+  baris: BarisAnggotaKelompok[];
+  total: number;
+  halaman: number;
+  perHalaman: number;
+  totalHalaman: number;
+};
+
+export async function ambilDaftarAnggotaKelompok(
+  args: DaftarAnggotaKelompokArgs,
+): Promise<DaftarAnggotaKelompokResult> {
+  const halaman = Math.max(1, args.halaman ?? 1);
+  const perHalaman = Math.min(100, Math.max(1, args.perHalaman ?? 20));
+  const skip = (halaman - 1) * perHalaman;
+
+  const idField = PETA_JENIS[args.jenis].idField;
+  const where = { [idField]: args.id };
+
+  const [total, data] = await Promise.all([
+    prisma.penduduk.count({ where }),
+    prisma.penduduk.findMany({
+      where,
+      skip,
+      take: perHalaman,
+      orderBy: [{ kk_level: "asc" }, { nama: "asc" }],
+      include: { kk_level_ref: true },
+    }),
+  ]);
+
+  const baris: BarisAnggotaKelompok[] = data.map((p) => ({
+    id: p.id,
+    nik: p.nik,
+    nama: p.nama,
+    sex: p.sex,
+    tempatlahir: p.tempatlahir,
+    tanggallahir: p.tanggallahir,
+    no_kk: p.no_kk,
+    hubungan_kk: p.kk_level_ref?.nama ?? null,
+  }));
+
+  return {
+    baris,
+    total,
+    halaman,
+    perHalaman,
+    totalHalaman: Math.max(1, Math.ceil(total / perHalaman)),
+  };
+}
 export async function ambilDaftarKK(
   args: DaftarKKArgs = {},
 ): Promise<DaftarKKResult> {

@@ -1,44 +1,40 @@
 // Halaman Kelompok.
-// Modul OpenSID: kelompok + kelompok_anggota.
-//
-// Untuk saat ini, "kelompok" didekati dengan pengelompokan warga
-// berdasarkan pekerjaan (RefPekerjaan). Tabel menampilkan agregat
-// jumlah warga per kelompok pekerjaan, dengan referensi jumlah
-// laki-laki dan perempuan.
-//
-// Catatan: jika di kemudian hari ada tabel kelompok khusus dengan
-// keanggotaan, modul ini akan diperluas.
+// Tabel rekap pengelompokan warga berdasarkan 6 referensi demografis:
+// Pekerjaan, Pendidikan, Agama, Status Kawin, Kewarganegaraan, Golongan
+// Darah. Jenis kelompok dipilih via searchParams (?jenis=pekerjaan).
+// Setiap baris menaut ke halaman detail per kelompok.
 
 import Link from "next/link";
-import { prisma } from "@/lib/prisma";
+import {
+  JENIS_KELOMPOK,
+  LABEL_JENIS_KELOMPOK,
+  ambilRekapKelompok,
+  type JenisKelompok,
+} from "@/modules/kependudukan";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminKelompokPage() {
-  const pekerjaan = await prisma.refPekerjaan.findMany({
-    orderBy: { nama: "asc" },
-  });
+type SearchParams = { jenis?: string };
 
-  // Untuk setiap kelompok pekerjaan, hitung jumlah anggota + JK
-  const rows = await Promise.all(
-    pekerjaan.map(async (p) => {
-      const [total, laki, perempuan] = await Promise.all([
-        prisma.penduduk.count({ where: { pekerjaan_id: p.id } }),
-        prisma.penduduk.count({ where: { pekerjaan_id: p.id, sex: 1 } }),
-        prisma.penduduk.count({ where: { pekerjaan_id: p.id, sex: 2 } }),
-      ]);
-      return {
-        id: p.id,
-        nama: p.nama,
-        total,
-        laki,
-        perempuan,
-      };
-    }),
-  );
+function isJenisKelompok(v: string | undefined): v is JenisKelompok {
+  return !!v && (JENIS_KELOMPOK as readonly string[]).includes(v);
+}
 
-  const totalSeluruh = rows.reduce((acc, r) => acc + r.total, 0);
-  const totalKK = await prisma.keluarga.count();
+export default async function AdminKelompokPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
+  const sp = await searchParams;
+  const jenis: JenisKelompok = isJenisKelompok(sp.jenis) ? sp.jenis : "pekerjaan";
+
+  const rekap = await ambilRekapKelompok(jenis);
+
+  // Tentukan baris mana yang "tersembunyi" (total == 0 dan persen == 0)
+  // untuk dipisahkan ke tabel ringkasan opsional, tapi default kita tampilkan
+  // semua agar perangkat desa tahu kategori yang belum terisi.
+
+  const totalSeluruh = rekap.baris.reduce((acc, r) => acc + r.total, 0);
 
   return (
     <div className="space-y-8">
@@ -62,34 +58,67 @@ export default async function AdminKelompokPage() {
       <header className="border-b border-ink/15 pb-6">
         <p className="meta mb-2">Kependudukan · Kelompok</p>
         <h2 className="font-serif text-3xl leading-tight lg:text-4xl">
-          Kelompok
+          Kelompok Warga
         </h2>
         <p className="mt-3 max-w-2xl text-ink-muted">
-          Pengelompokan warga berdasarkan pekerjaan. Tiap baris menunjukkan
-          satu kelompok dengan jumlah anggota, komposisi laki-laki dan
-          perempuan.
+          Pengelompokan warga berdasarkan atribut demografis. Pilih kategori
+          di bawah untuk melihat rekap. Setiap baris menaut ke daftar lengkap
+          anggota kelompok.
         </p>
       </header>
 
+      {/* === TAB JENIS === */}
+      <nav
+        aria-label="Kategori kelompok"
+        className="flex flex-wrap gap-1 border-b border-ink/15"
+      >
+        {JENIS_KELOMPOK.map((j) => {
+          const aktif = j === jenis;
+          return (
+            <Link
+              key={j}
+              href={`/admin/kelompok?jenis=${j}`}
+              className={`meta -mb-px border-b-2 px-3 py-2 normal-case tracking-normal transition-colors ${
+                aktif
+                  ? "border-clay text-ink"
+                  : "border-transparent text-ink-muted hover:border-ink/30 hover:text-ink"
+              }`}
+              aria-current={aktif ? "page" : undefined}
+            >
+              {LABEL_JENIS_KELOMPOK[j]}
+            </Link>
+          );
+        })}
+      </nav>
+
       {/* === RINGKASAN === */}
-      <dl className="grid grid-cols-3 gap-px border border-ink/10 bg-ink/10">
+      <dl className="grid grid-cols-2 gap-px border border-ink/10 bg-ink/10 lg:grid-cols-4">
         <div className="bg-paper px-4 py-5">
-          <dt className="meta">Total Kelompok</dt>
+          <dt className="meta">Kategori Aktif</dt>
+          <dd className="mt-2 font-serif text-2xl tabular-nums">
+            {rekap.label}
+          </dd>
+        </div>
+        <div className="bg-paper px-4 py-5">
+          <dt className="meta">Jumlah Kelompok</dt>
           <dd className="mt-2 font-serif text-3xl tabular-nums">
-            {rows.length.toLocaleString("id-ID")}
+            {rekap.baris.length.toLocaleString("id-ID")}
           </dd>
         </div>
         <div className="bg-paper px-4 py-5">
           <dt className="meta">Total Warga</dt>
           <dd className="mt-2 font-serif text-3xl tabular-nums">
-            {totalSeluruh.toLocaleString("id-ID")}
+            {rekap.totalPenduduk.toLocaleString("id-ID")}
           </dd>
         </div>
         <div className="bg-paper px-4 py-5">
-          <dt className="meta">Total KK</dt>
+          <dt className="meta">Kelompok Terisi</dt>
           <dd className="mt-2 font-serif text-3xl tabular-nums">
-            {totalKK.toLocaleString("id-ID")}
+            {totalSeluruh.toLocaleString("id-ID")}
           </dd>
+          <p className="meta text-2xs text-ink-muted">
+            akumulasi anggota per kelompok
+          </p>
         </div>
       </dl>
 
@@ -98,33 +127,43 @@ export default async function AdminKelompokPage() {
         <table className="w-full text-sm">
           <thead className="bg-ink/5 text-left">
             <tr>
-              <th className="px-3 py-2">Kelompok (Pekerjaan)</th>
-              <th className="px-3 py-2 text-right">Total</th>
-              <th className="px-3 py-2 text-right">Laki-laki</th>
-              <th className="px-3 py-2 text-right">Perempuan</th>
-              <th className="px-3 py-2 text-right">%</th>
+              <th scope="col" className="px-3 py-2">
+                {rekap.label}
+              </th>
+              <th scope="col" className="px-3 py-2 text-right">
+                Total
+              </th>
+              <th scope="col" className="px-3 py-2 text-right">
+                Laki-laki
+              </th>
+              <th scope="col" className="px-3 py-2 text-right">
+                Perempuan
+              </th>
+              <th scope="col" className="px-3 py-2 text-right">
+                %
+              </th>
+              <th scope="col" className="px-3 py-2 text-right">
+                Aksi
+              </th>
             </tr>
           </thead>
           <tbody>
-            {rows.length === 0 && (
+            {rekap.baris.length === 0 && (
               <tr>
                 <td
-                  colSpan={5}
+                  colSpan={6}
                   className="px-3 py-6 text-center text-ink-muted"
                 >
-                  Belum ada data kelompok.
+                  Belum ada data referensi {rekap.label.toLowerCase()}.
                 </td>
               </tr>
             )}
-            {rows.map((row) => {
-              const persen =
-                totalSeluruh > 0
-                  ? ((row.total / totalSeluruh) * 100).toFixed(1)
-                  : "0";
+            {rekap.baris.map((row) => {
+              const zero = row.total === 0;
               return (
                 <tr
                   key={row.id}
-                  className="border-t border-ink/10 hover:bg-ink/5"
+                  className={`border-t border-ink/10 ${zero ? "text-ink-muted" : "hover:bg-ink/5"}`}
                 >
                   <td className="px-3 py-2 font-medium">{row.nama}</td>
                   <td className="px-3 py-2 text-right tabular-nums">
@@ -136,8 +175,22 @@ export default async function AdminKelompokPage() {
                   <td className="px-3 py-2 text-right tabular-nums">
                     {row.perempuan.toLocaleString("id-ID")}
                   </td>
-                  <td className="px-3 py-2 text-right tabular-nums text-ink-muted">
-                    {persen}%
+                  <td className="px-3 py-2 text-right tabular-nums">
+                    {row.persen}%
+                  </td>
+                  <td className="px-3 py-2 text-right">
+                    <Link
+                      href={`/admin/kelompok/${jenis}/${row.id}`}
+                      className={`meta border border-ink/20 bg-paper px-2 py-1 normal-case tracking-normal ${
+                        zero
+                          ? "pointer-events-none opacity-40"
+                          : "hover:border-clay hover:text-clay"
+                      }`}
+                      aria-disabled={zero}
+                      tabIndex={zero ? -1 : undefined}
+                    >
+                      Lihat Anggota
+                    </Link>
                   </td>
                 </tr>
               );
@@ -148,16 +201,10 @@ export default async function AdminKelompokPage() {
 
       <aside className="border-t border-ink/15 pt-6 text-sm">
         <p className="text-ink-muted">
-          Catatan: saat ini kelompok direpresentasikan oleh
-          <code className="mx-1 rounded bg-ink/5 px-1.5 py-0.5 text-xs">
-            ref_pekerjaan
-          </code>
-          . Modul penuh (tabel kelompok + anggota) menyusul.
+          Klik tab di atas untuk berpindah kategori. Klik &ldquo;Lihat
+          Anggota&rdquo; untuk membuka detail satu kelompok.
         </p>
-        <Link
-          href="/admin/kependudukan"
-          className="link-clay mt-2 inline-block"
-        >
+        <Link href="/admin/kependudukan" className="link-clay mt-2 inline-block">
           ← Kembali ke Kependudukan
         </Link>
       </aside>
