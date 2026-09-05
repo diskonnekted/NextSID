@@ -14,6 +14,7 @@
 // Penduduk" + sheet "Kode Data".
 
 import { prisma } from "@/lib/prisma";
+import { revalidatePath } from "next/cache";
 import { BarisImport, HasilParse } from "../importer/parser";
 
 export type ImporterResult = {
@@ -322,4 +323,298 @@ export async function importKependudukan(
     hasil.push(await handler(sheetData.baris));
   }
   return hasil;
+}
+
+// =====================================================================
+// CRUD Penduduk perorangan (server action untuk form UI manual).
+// Berbeda dengan tambahAnggota: fungsi di bawah ini TIDAK mengharuskan
+// penduduk terikat pada KK existing. Penduduk bisa disimpan sebagai
+// individu terpisah (misalnya pendatang baru yang belum terdaftar di KK).
+// =====================================================================
+
+function str(v: FormDataEntryValue | null, fallback = ""): string {
+  if (v == null) return fallback;
+  return String(v).trim();
+}
+
+function numOrNull(v: FormDataEntryValue | null): number | null | undefined {
+  if (v === undefined) return undefined;
+  if (v == null || v === "") return null;
+  const n = Number(v);
+  return isNaN(n) ? null : n;
+}
+
+function parseTanggal(v: FormDataEntryValue | null): Date | null | undefined {
+  if (v === undefined) return undefined;
+  if (typeof v !== "string" || v.trim() === "") return null;
+  const d = new Date(v);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function parseEditNum(v: FormDataEntryValue | null): number | null | undefined {
+  if (v == null) return undefined;
+  const s = String(v).trim();
+  if (s === "") return undefined;
+  const n = Number(s);
+  return isNaN(n) ? undefined : n;
+}
+
+function parseEditStr(v: FormDataEntryValue | null): string | null | undefined {
+  if (v == null) return undefined;
+  const s = String(v);
+  return s === "" ? undefined : s;
+}
+
+export type BuatPendudukArgs = {
+  nik: string;
+  nama: string;
+  no_kk?: string | null;
+  sex?: number | null;
+  tempatlahir?: string | null;
+  tanggallahir?: Date | null;
+  kk_level?: number | null;
+  agama_id?: number | null;
+  pekerjaan_id?: number | null;
+  status_kawin?: number | null;
+  pendidikan_kk_id?: number | null;
+  warganegara_id?: number | null;
+  golongan_darah_id?: number | null;
+};
+
+async function buatPendudukInternal(args: BuatPendudukArgs): Promise<{ nik: string }> {
+  if (!args.nik.trim()) throw new Error("NIK wajib diisi.");
+  if (!args.nama.trim()) throw new Error("Nama wajib diisi.");
+  if (!/^\d{16}$/.test(args.nik)) throw new Error("NIK harus 16 digit angka.");
+
+  const existing = await prisma.penduduk.findUnique({ where: { nik: args.nik } });
+  if (existing) throw new Error(`NIK ${args.nik} sudah terdaftar.`);
+
+  const config = await prisma.config.findFirst({ orderBy: { id: "asc" } });
+  const configId = config?.id ?? null;
+
+  await prisma.penduduk.create({
+    data: {
+      nik: args.nik,
+      no_kk: args.no_kk ?? null,
+      config_id: configId,
+      nama: args.nama,
+      sex: args.sex ?? null,
+      tempatlahir: args.tempatlahir ?? null,
+      tanggallahir: args.tanggallahir ?? null,
+      kk_level: args.kk_level ?? null,
+      agama_id: args.agama_id ?? null,
+      pekerjaan_id: args.pekerjaan_id ?? null,
+      status_kawin: args.status_kawin ?? null,
+      pendidikan_kk_id: args.pendidikan_kk_id ?? null,
+      warganegara_id: args.warganegara_id ?? null,
+      golongan_darah_id: args.golongan_darah_id ?? null,
+      status_dasar: 1,
+    },
+  });
+  return { nik: args.nik };
+}
+
+async function editPendudukInternal(args: {
+  nikAsal: string;
+  nik: string;
+  nama: string;
+  no_kk?: string | null;
+  sex?: number | null | undefined;
+  tempatlahir?: string | null | undefined;
+  tanggallahir?: Date | null | undefined;
+  kk_level?: number | null | undefined;
+  agama_id?: number | null | undefined;
+  pekerjaan_id?: number | null | undefined;
+  status_kawin?: number | null | undefined;
+  pendidikan_kk_id?: number | null | undefined;
+  warganegara_id?: number | null | undefined;
+  golongan_darah_id?: number | null | undefined;
+}): Promise<void> {
+  const existing = await prisma.penduduk.findUnique({ where: { nik: args.nikAsal } });
+  if (!existing) throw new Error(`Penduduk NIK ${args.nikAsal} tidak ditemukan.`);
+
+  if (args.nikAsal !== args.nik) {
+    const duplikat = await prisma.penduduk.findUnique({ where: { nik: args.nik } });
+    if (duplikat) throw new Error(`NIK ${args.nik} sudah dipakai warga lain.`);
+    if (!/^\d{16}$/.test(args.nik)) throw new Error("NIK harus 16 digit angka.");
+  }
+
+  const updateData: any = {
+    nik: args.nik,
+    nama: args.nama,
+  };
+  if (args.no_kk !== undefined) updateData.no_kk = args.no_kk ?? null;
+  if (args.sex !== undefined) updateData.sex = args.sex ?? null;
+  if (args.tempatlahir !== undefined) updateData.tempatlahir = args.tempatlahir ?? null;
+  if (args.tanggallahir !== undefined) updateData.tanggallahir = args.tanggallahir ?? null;
+  if (args.kk_level !== undefined && args.kk_level !== null) updateData.kk_level = args.kk_level;
+  if (args.agama_id !== undefined) updateData.agama_id = args.agama_id ?? null;
+  if (args.pekerjaan_id !== undefined) updateData.pekerjaan_id = args.pekerjaan_id ?? null;
+  if (args.status_kawin !== undefined) updateData.status_kawin = args.status_kawin ?? null;
+  if (args.pendidikan_kk_id !== undefined) updateData.pendidikan_kk_id = args.pendidikan_kk_id ?? null;
+  if (args.warganegara_id !== undefined) updateData.warganegara_id = args.warganegara_id ?? null;
+  if (args.golongan_darah_id !== undefined) updateData.golongan_darah_id = args.golongan_darah_id ?? null;
+
+  await prisma.penduduk.update({
+    where: { nik: args.nikAsal },
+    data: updateData,
+  });
+}
+
+async function hapusPendudukInternal(nik: string): Promise<void> {
+  const p = await prisma.penduduk.findUnique({ where: { nik } });
+  if (!p) return;
+  if (p.kk_level === 1) {
+    throw new Error(
+      "Tidak dapat menghapus kepala keluarga lewat sini. Hapus KK seluruhnya dari halaman detail KK.",
+    );
+  }
+  await prisma.penduduk.delete({ where: { nik } });
+}
+
+// Ambil data lengkap satu penduduk + nama-nama referensi (untuk form detail)
+export async function ambilDetailPenduduk(nik: string) {
+  if (!nik) return null;
+  const p = await prisma.penduduk.findUnique({
+    where: { nik },
+    include: {
+      kk_level_ref: true,
+      agama: true,
+      pekerjaan: true,
+      pendidikan_kk: true,
+      warganegara: true,
+      golongan_darah: true,
+      keluarga: { select: { no_kk: true, alamat: true, dusun: true, rw: true, rt: true } },
+    },
+  });
+  if (!p) return null;
+
+  // Lookup status kawin (tabel terpisah)
+  let statusKawinNama: string | null = null;
+  if (p.status_kawin != null) {
+    const sk = await prisma.refStatusKawin.findUnique({
+      where: { id: p.status_kawin },
+      select: { nama: true },
+    });
+    statusKawinNama = sk?.nama ?? null;
+  }
+
+  // Lookup ayah & ibu
+  let ayah: { nik: string; nama: string } | null = null;
+  let ibu: { nik: string; nama: string } | null = null;
+  if (p.ayah_nik) {
+    const a = await prisma.penduduk.findUnique({
+      where: { nik: p.ayah_nik },
+      select: { nik: true, nama: true },
+    });
+    if (a) ayah = { nik: a.nik, nama: a.nama };
+  }
+  if (p.ibu_nik) {
+    const i = await prisma.penduduk.findUnique({
+      where: { nik: p.ibu_nik },
+      select: { nik: true, nama: true },
+    });
+    if (i) ibu = { nik: i.nik, nama: i.nama };
+  }
+
+  return {
+    id: p.id,
+    nik: p.nik,
+    nama: p.nama,
+    no_kk: p.no_kk,
+    sex: p.sex,
+    tempatlahir: p.tempatlahir,
+    tanggallahir: p.tanggallahir,
+    kk_level: p.kk_level,
+    hubungan_kk: p.kk_level_ref?.nama ?? null,
+    status_kawin: p.status_kawin,
+    status_kawin_nama: statusKawinNama,
+    agama: p.agama?.nama ?? null,
+    agama_id: p.agama_id,
+    pekerjaan: p.pekerjaan?.nama ?? null,
+    pekerjaan_id: p.pekerjaan_id,
+    pendidikan: p.pendidikan_kk?.nama ?? null,
+    pendidikan_kk_id: p.pendidikan_kk_id,
+    warganegara: p.warganegara?.nama ?? null,
+    warganegara_id: p.warganegara_id,
+    golongan_darah: p.golongan_darah?.nama ?? null,
+    golongan_darah_id: p.golongan_darah_id,
+    keluarga: p.keluarga,
+    ayah,
+    ibu,
+    created_at: p.created_at,
+    updated_at: p.updated_at,
+  };
+}
+
+// Daftar KK (dropdown pilih KK saat tambah penduduk)
+export async function ambilDaftarKKUntukDropdown(): Promise<
+  Array<{ no_kk: string; kepala: string | null }>
+> {
+  const kk = await prisma.keluarga.findMany({
+    orderBy: { no_kk: "asc" },
+    include: {
+      anggota: {
+        where: { kk_level: 1 },
+        take: 1,
+        select: { nama: true },
+      },
+    },
+    take: 500,
+  });
+  return kk.map((k) => ({
+    no_kk: k.no_kk,
+    kepala: k.anggota[0]?.nama ?? null,
+  }));
+}
+
+// ---------- Server Actions ----------
+
+export async function aksiBuatPenduduk(formData: FormData) {
+  const result = await buatPendudukInternal({
+    nik: str(formData.get("nik")),
+    nama: str(formData.get("nama")),
+    no_kk: str(formData.get("no_kk")) || null,
+    sex: numOrNull(formData.get("sex")),
+    tempatlahir: str(formData.get("tempatlahir")) || null,
+    tanggallahir: parseTanggal(formData.get("tanggallahir")) ?? null,
+    kk_level: numOrNull(formData.get("kk_level")),
+    agama_id: numOrNull(formData.get("agama_id")),
+    pekerjaan_id: numOrNull(formData.get("pekerjaan_id")),
+    status_kawin: numOrNull(formData.get("status_kawin")),
+    pendidikan_kk_id: numOrNull(formData.get("pendidikan_kk_id")),
+    warganegara_id: numOrNull(formData.get("warganegara_id")),
+    golongan_darah_id: numOrNull(formData.get("golongan_darah_id")),
+  });
+  revalidatePath("/admin/kependudukan");
+  return { ok: true, nik: result.nik };
+}
+
+export async function aksiEditPenduduk(formData: FormData) {
+  await editPendudukInternal({
+    nikAsal: str(formData.get("nikAsal")),
+    nik: str(formData.get("nik")),
+    nama: str(formData.get("nama")),
+    no_kk: str(formData.get("no_kk")) || null,
+    sex: parseEditNum(formData.get("sex")),
+    tempatlahir: parseEditStr(formData.get("tempatlahir")),
+    tanggallahir: parseTanggal(formData.get("tanggallahir")),
+    kk_level: parseEditNum(formData.get("kk_level")),
+    agama_id: parseEditNum(formData.get("agama_id")),
+    pekerjaan_id: parseEditNum(formData.get("pekerjaan_id")),
+    status_kawin: parseEditNum(formData.get("status_kawin")),
+    pendidikan_kk_id: parseEditNum(formData.get("pendidikan_kk_id")),
+    warganegara_id: parseEditNum(formData.get("warganegara_id")),
+    golongan_darah_id: parseEditNum(formData.get("golongan_darah_id")),
+  });
+  revalidatePath("/admin/kependudukan");
+  revalidatePath(`/admin/kependudukan/${str(formData.get("nikAsal"))}`);
+  revalidatePath(`/admin/kependudukan/${str(formData.get("nik"))}`);
+  return { ok: true };
+}
+
+export async function aksiHapusPenduduk(nik: string) {
+  await hapusPendudukInternal(nik);
+  revalidatePath("/admin/kependudukan");
+  return { ok: true };
 }

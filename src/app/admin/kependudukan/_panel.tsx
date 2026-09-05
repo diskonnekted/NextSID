@@ -252,24 +252,33 @@ export default function PanelKelola({
               {daftar.total} baris · halaman {daftar.halaman} dari {daftar.totalHalaman}
             </p>
           </div>
-          <form onSubmit={handleCari} className="flex items-end gap-2">
-            <label className="flex-1 lg:w-72">
-              <span className="meta block">Cari nama atau NIK</span>
-              <input
-                type="search"
-                value={cari}
-                onChange={(e) => setCari(e.target.value)}
-                placeholder="Ketik untuk mencari…"
-                className="mt-1 w-full"
-              />
-            </label>
-            <button
-              type="submit"
-              className="border border-ink bg-ink px-4 py-2 text-sm text-paper transition-colors hover:bg-clay"
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+            <form onSubmit={handleCari} className="flex items-end gap-2">
+              <label className="flex-1 lg:w-72">
+                <span className="meta block">Cari nama atau NIK</span>
+                <input
+                  type="search"
+                  value={cari}
+                  onChange={(e) => setCari(e.target.value)}
+                  placeholder="Ketik untuk mencari…"
+                  className="mt-1 w-full"
+                />
+              </label>
+              <button
+                type="submit"
+                className="border border-ink bg-ink px-4 py-2 text-sm text-paper transition-colors hover:bg-clay"
+              >
+                Cari
+              </button>
+            </form>
+            <Link
+              href="/admin/kependudukan/baru"
+              className="meta inline-flex items-center justify-center gap-2 border border-clay bg-clay px-4 py-2 normal-case tracking-normal text-paper transition-colors hover:bg-ink"
             >
-              Cari
-            </button>
-          </form>
+              <span aria-hidden="true">+</span>
+              Tambah Penduduk
+            </Link>
+          </div>
         </div>
 
         <div className="overflow-x-auto border border-ink/15">
@@ -283,12 +292,13 @@ export default function PanelKelola({
                 <Th>No. KK</Th>
                 <Th>Kepala Keluarga</Th>
                 <Th>Alamat</Th>
+                <Th>Aksi</Th>
               </tr>
             </thead>
             <tbody className="divide-y divide-ink/10">
               {daftar.baris.length === 0 && !sedangMemuat ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-ink-muted">
+                  <td colSpan={8} className="px-4 py-8 text-center text-ink-muted">
                     Tidak ada data{cari ? ` untuk "${cari}"` : ""}.
                   </td>
                 </tr>
@@ -297,7 +307,12 @@ export default function PanelKelola({
                   <tr key={p.id} className="hover:bg-paper-dim/50">
                     <Td className="font-mono text-xs">{p.nik}</Td>
                     <Td>
-                      <div className="font-medium">{p.nama}</div>
+                      <Link
+                        href={`/admin/kependudukan/${p.nik}`}
+                        className="font-medium underline decoration-ink/20 underline-offset-2 hover:text-clay hover:decoration-clay"
+                      >
+                        {p.nama}
+                      </Link>
                       <div className="meta text-2xs">
                         {p.agama ?? "—"} · {p.pekerjaan ?? "—"}
                       </div>
@@ -334,6 +349,14 @@ export default function PanelKelola({
                       ) : (
                         "—"
                       )}
+                    </Td>
+                    <Td>
+                      <Link
+                        href={`/admin/kependudukan/${p.nik}`}
+                        className="meta border border-ink/20 bg-paper px-2 py-1 normal-case tracking-normal hover:border-clay hover:text-clay"
+                      >
+                        Detail
+                      </Link>
                     </Td>
                   </tr>
                 ))
