@@ -672,10 +672,28 @@ export async function hapusAnggota(nik: string): Promise<void> {
   await prisma.penduduk.delete({ where: { nik } });
 }
 
-// Daftar referensi untuk form anggota (agama, pekerjaan, status kawin,
-// pendidikan, hubungan KK, warganegara, golongan darah).
+// Cache referensi penduduk di memory.
+// Data referensi (agama, pekerjaan, dll) jarang berubah — cache selama lifetime server.
+// Mengurangi 11 query DB menjadi 1 query per server restart.
+let _cacheReferensi: ReturnType<typeof ambilReferensiPenduduk> | null = null;
+let _cacheReferensiTime = 0;
+
+/** Ambil referensi untuk form penduduk (agama, pekerjaan, dll). */
 export async function ambilReferensiPenduduk() {
-  const [agama, pekerjaan, statusKawin, pendidikan, hubunganKK, warganegara, golonganDarah] =
+  // Cek cache (TTL 1 jam)
+  const now = Date.now();
+  if (_cacheReferensi && now - _cacheReferensiTime < 3600_000) {
+    return _cacheReferensi;
+  }
+
+  const result = await _fetchReferensi();
+  _cacheReferensi = result;
+  _cacheReferensiTime = now;
+  return result;
+}
+
+async function _fetchReferensi() {
+  const [agama, pekerjaan, statusKawin, pendidikan, hubunganKK, warganegara, golonganDarah, cacat, caraKB, statusDasar, asuransi] =
     await Promise.all([
       prisma.refAgama.findMany({ orderBy: { nama: "asc" } }),
       prisma.refPekerjaan.findMany({ orderBy: { nama: "asc" } }),
@@ -684,6 +702,10 @@ export async function ambilReferensiPenduduk() {
       prisma.refHubunganKK.findMany({ orderBy: { nama: "asc" } }),
       prisma.refWarganegara.findMany({ orderBy: { nama: "asc" } }),
       prisma.refGolonganDarah.findMany({ orderBy: { nama: "asc" } }),
+      prisma.refCacat.findMany({ orderBy: { nama: "asc" } }),
+      prisma.refCaraKB.findMany({ orderBy: { nama: "asc" } }),
+      prisma.refStatusDasar.findMany({ orderBy: { nama: "asc" } }),
+      prisma.refAsuransi.findMany({ orderBy: { nama: "asc" } }),
     ]);
   return {
     agama,
@@ -693,6 +715,10 @@ export async function ambilReferensiPenduduk() {
     hubunganKK,
     warganegara,
     golonganDarah,
+    cacat,
+    caraKB,
+    statusDasar,
+    asuransi,
   };
 }
 

@@ -8,7 +8,8 @@ import { ambilDaftarFormat, ambilDaftarPermohonan } from "@/modules/surat";
 import { ambilDaftarPenduduk } from "@/modules/kependudukan";
 import PanelPermohonan from "./_panel";
 
-export const dynamic = "force-dynamic";
+export const dynamic = "force-static";
+export const revalidate = 60;
 
 const STATUS = {
   0: "Belum Lengkap",

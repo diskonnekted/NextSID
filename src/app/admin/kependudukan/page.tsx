@@ -12,7 +12,8 @@ import Link from "next/link";
 import { ambilStatistik, ambilDaftarPenduduk } from "@/modules/kependudukan";
 import PanelKelola from "./_panel";
 
-export const dynamic = "force-dynamic";
+export const dynamic = "force-static";
+export const revalidate = 60;
 
 export default async function AdminKependudukanPage({
   searchParams,

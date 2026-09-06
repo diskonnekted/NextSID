@@ -10,7 +10,8 @@ import { ambilDaftarPenduduk } from "@/modules/kependudukan";
 import { ambilDaftarSyarat } from "@/modules/surat";
 import PanelDokumen from "./_panel";
 
-export const dynamic = "force-dynamic";
+export const dynamic = "force-static";
+export const revalidate = 60;
 
 const KATEGORI = {
   1: "Informasi Publik",

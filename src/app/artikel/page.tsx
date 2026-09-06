@@ -79,7 +79,7 @@ export default async function DaftarArtikel({
       <div className="grid gap-12 lg:grid-cols-12 lg:gap-16">
         {/* Sidebar kiri ala TownPress: daftar kategori dengan counter */}
         <div className="lg:col-span-4">
-          <KategoriSidebar aktif={kategoriInfo.slug ?? null} />
+          <KategoriSidebar aktif={kategoriInfo.slug ?? null} cari={cari ?? null} kategoriParam={searchParams.kategori ?? null} />
         </div>
 
         {/* Konten utama */}

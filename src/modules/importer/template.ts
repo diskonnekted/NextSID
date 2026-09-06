@@ -173,65 +173,63 @@ const sheetKeluarga: SheetTemplate = {
 };
 
 // =============================================================
-// Sheet: PENDUDUK (43 kolom sesuai format-impor-excel.xlsm)
+// Sheet: PENDUDUK (43 kolom sesuai format-impor-excel.xlsx)
 // Field *_id merujuk ke sheet 'Kode Data' (Ref*).
 // =============================================================
 // Kontrak kolom: nama header di baris pertama HARUS sama persis dengan
 // snake_case key (lowercase, underscore-separated). Ini sesuai dengan
-// format-impor-excel.xlsm yang dipakai sebagai acuan database utama.
+// format-impor-excel.xlsx di bahan/lemahjaya yang dipakai sebagai acuan.
 const sheetPenduduk: SheetTemplate = {
   key: "penduduk",
   judul: "Data Penduduk",
   deskripsi:
-    "Daftar penduduk per KK. 43 kolom sesuai format OpenSID. Kolom *_id merujuk ke sheet 'Kode Data'.",
+    "Daftar penduduk per KK. 43 kolom sesuai format-impor-excel.xlsx. Kolom *_id merujuk ke sheet 'Kode Data'.",
   barisHeader: 1,
   kolom: [
-    // Identitas KK
-    { key: "alamat", judul: "alamat", tipe: "string", contoh: "Jl. Raya No. 1" },
-    { key: "dusun", judul: "dusun", tipe: "string", contoh: "Sukamaju" },
-    { key: "rw", judul: "rw", tipe: "string", contoh: "002" },
-    { key: "rt", judul: "rt", tipe: "string", contoh: "003" },
-    { key: "no_kk", judul: "no_kk", tipe: "string", contoh: "3201234567890001" },
-    // Identitas diri
-    { key: "nama", judul: "nama", tipe: "string", wajib: true, contoh: "AHMAD SUBANDI" },
-    { key: "nik", judul: "nik", tipe: "string", wajib: true, contoh: "3201234567890002" },
+    // Identitas KK & diri (kolom 1-4: alamat, dusun, rw, rt)
+    { key: "alamat", judul: "alamat", tipe: "string", contoh: "LEMAHJAYA" },
+    { key: "dusun", judul: "dusun", tipe: "string", contoh: "1 DUSUN. DUSUN 1" },
+    { key: "rw", judul: "rw", tipe: "string", contoh: "001" },
+    { key: "rt", judul: "rt", tipe: "string", contoh: "002" },
+    // Identitas diri (kolom 5-10)
+    { key: "nama", judul: "nama", tipe: "string", wajib: true, contoh: "TOMO ADE SAPUTRA" },
+    { key: "no_kk", judul: "no_kk", tipe: "string", contoh: "3304102802230006" },
+    { key: "nik", judul: "nik", tipe: "string", wajib: true, contoh: "3304100806020005" },
     { key: "sex", judul: "sex", tipe: "integer", contoh: "1" },
-    { key: "tempatlahir", judul: "tempatlahir", tipe: "string", contoh: "Bandung" },
-    { key: "tanggallahir", judul: "tanggallahir", tipe: "date", contoh: "1980-05-12" },
-    // Demografi (ID ke Ref)
+    { key: "tempatlahir", judul: "tempatlahir", tipe: "string", contoh: "BANJARNEGARA" },
+    { key: "tanggallahir", judul: "tanggallahir", tipe: "date", contoh: "2002-06-08" },
+    // Demografi (kolom 11-21)
     { key: "agama_id", judul: "agama_id", tipe: "integer", contoh: "1" },
-    { key: "pendidikan_kk_id", judul: "pendidikan_kk_id", tipe: "integer", contoh: "5" },
+    { key: "pendidikan_kk_id", judul: "pendidikan_kk_id", tipe: "integer", contoh: "3" },
     { key: "pendidikan_sedang_id", judul: "pendidikan_sedang_id", tipe: "integer", contoh: "0" },
-    { key: "pekerjaan_id", judul: "pekerjaan_id", tipe: "integer", contoh: "88" },
+    { key: "pekerjaan_id", judul: "pekerjaan_id", tipe: "integer", contoh: "19" },
     { key: "status_kawin", judul: "status_kawin", tipe: "integer", contoh: "2" },
     { key: "kk_level", judul: "kk_level", tipe: "integer", contoh: "1" },
     { key: "warganegara_id", judul: "warganegara_id", tipe: "integer", contoh: "1" },
-    { key: "golongan_darah_id", judul: "golongan_darah_id", tipe: "integer", contoh: "13" },
-    { key: "cacat_id", judul: "cacat_id", tipe: "integer", contoh: "0" },
-    { key: "cara_kb_id", judul: "cara_kb_id", tipe: "integer", contoh: "0" },
-    { key: "hamil", judul: "hamil", tipe: "boolean", contoh: "0" },
-    { key: "ktp_el", judul: "ktp_el", tipe: "boolean", contoh: "1" },
-    { key: "status_rekam", judul: "status_rekam", tipe: "integer", contoh: "1" },
-    { key: "status_dasar", judul: "status_dasar", tipe: "integer", contoh: "1" },
-    { key: "id_asuransi", judul: "id_asuransi", tipe: "integer", contoh: "1" },
-    // Keluarga
     { key: "ayah_nik", judul: "ayah_nik", tipe: "string", contoh: "" },
-    { key: "nama_ayah", judul: "nama_ayah", tipe: "string", contoh: "" },
+    { key: "nama_ayah", judul: "nama_ayah", tipe: "string", contoh: "TONO" },
     { key: "ibu_nik", judul: "ibu_nik", tipe: "string", contoh: "" },
-    { key: "nama_ibu", judul: "nama_ibu", tipe: "string", contoh: "" },
-    // Dokumen
+    { key: "nama_ibu", judul: "nama_ibu", tipe: "string", contoh: "SUTIRAH" },
+    // Dokumen & lainnya (kolom 22-43)
+    { key: "golongan_darah_id", judul: "golongan_darah_id", tipe: "integer", contoh: "13" },
     { key: "akta_lahir", judul: "akta_lahir", tipe: "string", contoh: "" },
     { key: "dokumen_pasport", judul: "dokumen_pasport", tipe: "string", contoh: "" },
     { key: "tanggal_akhir_paspor", judul: "tanggal_akhir_paspor", tipe: "date", contoh: "" },
     { key: "dokumen_kitas", judul: "dokumen_kitas", tipe: "string", contoh: "" },
     { key: "akta_perkawinan", judul: "akta_perkawinan", tipe: "string", contoh: "" },
-    { key: "tanggalperkawinan", judul: "tanggalperkawinan", tipe: "date", contoh: "" },
+    { key: "tanggalperkawinan", judul: "tanggalperkawinan", tipe: "date", contoh: "2021-10-29" },
     { key: "akta_perceraian", judul: "akta_perceraian", tipe: "string", contoh: "" },
     { key: "tanggalperceraian", judul: "tanggalperceraian", tipe: "date", contoh: "" },
-    // Lainnya
+    { key: "cacat_id", judul: "cacat_id", tipe: "integer", contoh: "0" },
+    { key: "cara_kb_id", judul: "cara_kb_id", tipe: "integer", contoh: "0" },
+    { key: "hamil", judul: "hamil", tipe: "boolean", contoh: "0" },
+    { key: "ktp_el", judul: "ktp_el", tipe: "boolean", contoh: "1" },
+    { key: "status_rekam", judul: "status_rekam", tipe: "integer", contoh: "1" },
     { key: "alamat_sekarang", judul: "alamat_sekarang", tipe: "string", contoh: "" },
+    { key: "status_dasar", judul: "status_dasar", tipe: "integer", contoh: "1" },
     { key: "suku", judul: "suku", tipe: "string", contoh: "" },
     { key: "tag_id_card", judul: "tag_id_card", tipe: "string", contoh: "" },
+    { key: "id_asuransi", judul: "id_asuransi", tipe: "integer", contoh: "0" },
     { key: "no_asuransi", judul: "no_asuransi", tipe: "string", contoh: "" },
     { key: "lat", judul: "lat", tipe: "string", contoh: "" },
     { key: "lng", judul: "lng", tipe: "string", contoh: "" },

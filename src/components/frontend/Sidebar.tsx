@@ -20,9 +20,9 @@ export async function Sidebar() {
       {terpopuler.length > 0 ? (
         <section aria-labelledby="terpopuler-heading">
           <div className="mb-4 flex items-baseline justify-between">
-            <h2 id="terpopuler-heading" className="meta">Terbaru</h2>
+            <h2 id="terpopuler-heading" className="meta">Artikel Terbaru</h2>
             <Link href="/artikel" className="text-xs text-clay hover:text-ink">
-              Lihat semua →
+              Semua artikel
             </Link>
           </div>
           <div>

@@ -3,9 +3,11 @@ import { prisma } from "@/lib/prisma";
 
 type Props = {
   aktif?: string | null; // slug kategori yang sedang dipilih
+  cari?: string | null; // kata kunci pencarian aktif
+  kategoriParam?: string | null; // param kategori mentah (untuk dipertahankan saat search)
 };
 
-export async function KategoriSidebar({ aktif }: Props) {
+export async function KategoriSidebar({ aktif, cari, kategoriParam }: Props) {
   const kategori = await prisma.kategori.findMany({
     where: { enabled: 1, parent_id: null },
     orderBy: { urut: "asc" },
@@ -21,6 +23,42 @@ export async function KategoriSidebar({ aktif }: Props) {
 
   return (
     <aside aria-label="Kategori artikel" className="space-y-8 lg:sticky lg:top-8 lg:self-start">
+      {/* Form pencarian artikel */}
+      <form
+        method="GET"
+        action="/artikel"
+        className="flex items-center gap-2 border border-ink/20 bg-paper-dim px-4 py-2"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          className="h-5 w-5 shrink-0 text-ink-muted"
+          aria-hidden="true"
+        >
+          <circle cx="11" cy="11" r="7" />
+          <path strokeLinecap="round" d="m20 20-3.5-3.5" />
+        </svg>
+        <input
+          type="search"
+          name="cari"
+          defaultValue={cari ?? ""}
+          placeholder="Cari artikel…"
+          className="min-w-0 flex-1 bg-transparent text-sm text-ink placeholder:text-ink-muted focus:outline-none"
+        />
+        {kategoriParam ? (
+          <input type="hidden" name="kategori" value={kategoriParam} />
+        ) : null}
+        <button
+          type="submit"
+          className="shrink-0 bg-ink px-3 py-1.5 text-xs font-medium uppercase tracking-wider text-paper hover:bg-clay"
+        >
+          Cari
+        </button>
+      </form>
+
       <div>
         <h2 className="meta mb-4">Kategori</h2>
         <ul className="space-y-1 border-t border-ink/15">

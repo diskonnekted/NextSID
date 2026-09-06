@@ -6,7 +6,8 @@ import { ambilDaftarPenduduk } from "@/modules/kependudukan";
 import { ambilPohonWilayah, ambilDaftarWilayahRingkas } from "@/modules/info-desa";
 import PanelWilayah from "./_panel";
 
-export const dynamic = "force-dynamic";
+export const dynamic = "force-static";
+export const revalidate = 60;
 
 export default async function AdminWilayahPage() {
   const [pohon, ringkas, daftarPenduduk] = await Promise.all([

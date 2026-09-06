@@ -8,7 +8,8 @@ import {
 import FormKonfigurasi from "./_form";
 import UploadLogo from "./_logo-upload";
 
-export const dynamic = "force-dynamic";
+export const dynamic = "force-static";
+export const revalidate = 60;
 
 export default async function AdminKonfigurasiPage() {
   const [cfg, settings] = await Promise.all([

@@ -5,7 +5,8 @@
 import { ambilIdentitas } from "@/modules/info-desa";
 import FormIdentitas from "./_form";
 
-export const dynamic = "force-dynamic";
+export const dynamic = "force-static";
+export const revalidate = 60;
 
 export default async function AdminIdentitasPage() {
   const identitas = await ambilIdentitas();

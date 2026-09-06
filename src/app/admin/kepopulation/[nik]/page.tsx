@@ -11,7 +11,8 @@ import {
 } from "@/modules/kependudukan/handler";
 import PanelDetailPenduduk from "./_panel";
 
-export const dynamic = "force-dynamic";
+export const dynamic = "force-static"
+export const revalidate = 60;
 
 type Params = { nik: string };
 
@@ -43,7 +44,16 @@ export default async function DetailPendudukPage({
   const detailSerializable = {
     ...detail,
     tanggallahir: detail.tanggallahir
-      ? detail.tanggallahir.toISOString()
+      ? (detail.tanggallahir instanceof Date ? detail.tanggallahir.toISOString() : detail.tanggallahir)
+      : null,
+    tanggal_akhir_paspor: detail.tanggal_akhir_paspor
+      ? (detail.tanggal_akhir_paspor instanceof Date ? (detail.tanggal_akhir_paspor as any).toISOString() : String(detail.tanggal_akhir_paspor))
+      : null,
+    tanggalperkawinan: detail.tanggalperkawinan
+      ? (detail.tanggalperkawinan instanceof Date ? (detail.tanggalperkawinan as any).toISOString() : String(detail.tanggalperkawinan))
+      : null,
+    tanggalperceraian: detail.tanggalperceraian
+      ? (detail.tanggalperceraian instanceof Date ? (detail.tanggalperceraian as any).toISOString() : String(detail.tanggalperceraian))
       : null,
     created_at: detail.created_at ? detail.created_at.toISOString() : null,
     updated_at: detail.updated_at ? detail.updated_at.toISOString() : null,
@@ -101,6 +111,10 @@ export default async function DetailPendudukPage({
             id: r.id,
             nama: r.nama,
           })),
+          cacat: ref.cacat.map((r) => ({ id: r.id, nama: r.nama })),
+          caraKB: ref.caraKB.map((r) => ({ id: r.id, nama: r.nama })),
+          statusDasar: ref.statusDasar.map((r) => ({ id: r.id, nama: r.nama })),
+          asuransi: ref.asuransi.map((r) => ({ id: r.id, nama: r.nama })),
         }}
         kkList={kkList}
       />

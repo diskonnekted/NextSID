@@ -421,6 +421,51 @@ export async function hapusPermohonan(id: number) {
   await prisma.permohonanSurat.delete({ where: { id } });
 }
 
+export async function cetakDariPermohonan(idPermohonan: number) {
+  const configId = await ambilConfigId();
+  const perm = await prisma.permohonanSurat.findUnique({
+    where: { id: idPermohonan },
+    include: {
+      pemohon: true,
+      surat: { select: { nama: true, kode_surat: true } },
+    },
+  });
+  if (!perm) throw new Error("Permohonan tidak ditemukan.");
+  if (!perm.id_surat) throw new Error("Jenis surat belum ditentukan.");
+
+  const fmt = await prisma.suratFormat.findUnique({
+    where: { id: perm.id_surat },
+  });
+  if (!fmt) throw new Error("Template surat tidak ditemukan.");
+
+  // Buat LogSurat dari PermohonanSurat
+  return prisma.logSurat.create({
+    data: {
+      config_id: configId,
+      id_format_surat: perm.id_surat,
+      id_pend: perm.id_pemohon,
+      nama_pamong: null,
+      nama_jabatan: null,
+      nama_surat: fmt.nama,
+      kode_surat: fmt.kode_surat,
+      tanggal: new Date(),
+      bulan: new Date().toLocaleString("id-ID", { month: "long" }),
+      tahun: new Date().getFullYear().toString(),
+      no_surat: null,
+      lampiran: null,
+      keterangan: `Dari permohonan #${perm.no_antrian}`,
+      lokasi_arsip: null,
+      status: 0,
+      verifikasi_operator: 0,
+      verifikasi_kades: 0,
+      verifikasi_sekdes: 0,
+      isi_surat: perm.isian_form,
+      kecamatan: null,
+      pemohon: perm.pemohon?.nama ?? null,
+    },
+  });
+}
+
 // =====================================================================
 // DOKUMEN (Lampiran/Syarat)
 // =====================================================================

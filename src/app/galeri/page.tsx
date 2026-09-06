@@ -48,7 +48,7 @@ export default async function GaleriPage() {
               <div className="relative aspect-[4/3] bg-paper-dim">
                 {g.gambar ? (
                   <Image
-                    src={`/uploads/artikel/${g.gambar}`}
+                    src={g.gambar.startsWith("/") ? g.gambar : `/uploads/artikel/${g.gambar}`}
                     alt={g.judul}
                     fill
                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"

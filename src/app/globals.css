@@ -257,3 +257,121 @@ body:has([data-admin-scope]) [data-chrome="public"] {
 html, body {
   transition: background-color 200ms ease, color 200ms ease;
 }
+
+/* ============================================================
+   Override warna template OpenSID agar terbaca
+   (template pakai inline color: white yg tidak terbaca di light theme
+    dan color hardcoded di dark theme. Kita reset ke hitam pekat).
+   ============================================================ */
+#surat-preview {
+  /* Container surat selalu putih, huruf hitam, tidak ikut dark mode */
+  background: #ffffff !important;
+  color: #000000 !important;
+}
+#surat-preview * {
+  color: #000000 !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  text-shadow: none !important;
+  -webkit-text-fill-color: #000000 !important;
+  border-color: rgba(0, 0, 0, 0.3) !important;
+}
+#surat-preview a {
+  color: #000000 !important;
+  text-decoration: none !important;
+  -webkit-text-fill-color: #000000 !important;
+}
+
+/* Cegah baris tanggal "Desa, dd Month yyyy" di kolom tanda tangan ter-wrap.
+   Strategi: post-process di page.tsx dengan mengganti ", " di frasa tanggal
+   menjadi "," + non-breaking space. CSS hanya reset konflik layout OpenSID. */
+#surat-preview table {
+  table-layout: auto;
+}
+#surat-preview td,
+#surat-preview th {
+  /* OpenSID pakai inline height kecil; biarkan layout natural */
+  vertical-align: top;
+}
+/* KopSurat <p> tidak kena margin global #surat-preview p */
+#surat-preview > div:first-child p {
+  margin: 0 !important;
+}
+#surat-preview p {
+  margin: 0 0 0.5em;
+}
+/* Judul template ([JUdul_surat]) jadi dobel dengan KopSurat otomatis.
+   Template OpenSID selalu pakai <h4> untuk judul. Sembunyikan saja. */
+#surat-preview h4 {
+  display: none;
+}
+
+
+/* ============================================================
+   Print styles untuk halaman surat
+   ============================================================ */
+@media print {
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  /* Sembunyikan SEMUA chrome admin */
+  [data-admin-scope] aside,
+  [data-admin-scope] header,
+  [data-admin-scope] button,
+  [data-admin-scope] details,
+  [data-admin-scope] nav,
+  [data-admin-scope] footer,
+  [data-admin-scope] a,
+  [data-admin-scope] summary,
+  [data-admin-scope] svg,
+  [data-admin-scope] .fixed,
+  [data-admin-scope] .sticky,
+  /* Sembunyikan elemen halaman cetak (judul, info, toolbar) */
+  [data-admin-scope] h1,
+  [data-admin-scope] h2,
+  [data-admin-scope] h3,
+  [data-admin-scope] p,
+  [data-admin-scope] .grid,
+  [data-admin-scope] .container-page {
+    display: none !important;
+  }
+  /* Tampilkan SEMUA elemen di dalam #surat-preview kembali */
+  #surat-preview,
+  #surat-preview * {
+    display: revert !important;
+  }
+  /* Container surat — full width, tanpa padding (handle @page margin) */
+  [data-admin-scope] #surat-preview {
+    width: 100% !important;
+    max-width: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    background: #fff !important;
+    box-shadow: none !important;
+  }
+  /* KopSurat: hindari page break di tengah kop */
+  #surat-preview > div:first-child {
+    page-break-inside: avoid;
+    page-break-after: avoid;
+  }
+  /* KopSurat paragraphs: reset margin di print */
+  #surat-preview > div:first-child p {
+    margin: 0 !important;
+    line-height: 1.25 !important;
+  }
+  /* Template content: no extra margin di print */
+  #surat-preview > div:last-child p {
+    margin: 0 !important;
+  }
+  /* Cegah tabel surat terpotong halaman */
+  #surat-preview > div:last-child table {
+    page-break-inside: avoid;
+  }
+  /* Atur margin halaman */
+  @page {
+    size: A4;
+    margin: 2cm;
+  }
+}

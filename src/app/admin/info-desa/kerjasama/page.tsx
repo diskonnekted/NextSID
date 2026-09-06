@@ -3,7 +3,8 @@
 import { ambilDaftarKerjasama } from "@/modules/info-desa";
 import PanelKerjasama from "./_panel";
 
-export const dynamic = "force-dynamic";
+export const dynamic = "force-static";
+export const revalidate = 60;
 
 export default async function AdminKerjasamaPage() {
   const daftar = await ambilDaftarKerjasama();

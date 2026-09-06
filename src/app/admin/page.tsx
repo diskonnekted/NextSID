@@ -5,7 +5,8 @@ import Link from "next/link";
 import { ambilStatistik } from "@/modules/kependudukan";
 import { menuAdmin } from "./_menu";
 
-export const dynamic = "force-dynamic";
+export const dynamic = "force-static";
+export const revalidate = 60;
 
 export default async function AdminPage() {
   const stat = await ambilStatistik();

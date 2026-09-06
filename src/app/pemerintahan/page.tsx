@@ -9,6 +9,27 @@ export const metadata = {
   description: "Perangkat desa, struktur organisasi, dan lembaga desa.",
 };
 
+// Gabungkan gelar depan/belakang dengan nama, hindari duplikasi
+// jika gelar sudah ada di dalam nama.
+function namaLengkap(nama: string, depan: string | null, belakang: string | null): string {
+  let hasil = nama;
+  if (depan && !nama.startsWith(depan.trim())) {
+    hasil = `${depan} ${hasil}`;
+  }
+  if (belakang) {
+    const belakangTrimmed = belakang.replace(/^,?\s*/, "");
+    const pattern = new RegExp(`[,\\s]${backslashEscape(belakangTrimmed)}\\s*$`);
+    if (!pattern.test(nama)) {
+      hasil = `${hasil}, ${belakangTrimmed}`;
+    }
+  }
+  return hasil;
+}
+
+function backslashEscape(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 export default async function PemerintahanPage() {
   const config = await ambilConfig();
 
@@ -44,32 +65,57 @@ export default async function PemerintahanPage() {
               Belum ada data perangkat desa yang ditampilkan.
             </p>
           ) : (
-            <ul className="grid gap-4 sm:grid-cols-2">
-              {pamong.map((p) => (
-                <li
-                  key={p.id}
-                  className="border border-ink/15 bg-paper p-5"
-                >
-                  <p className="meta">
-                    {p.jabatan?.nama ?? "Perangkat Desa"}
-                  </p>
-                  <p className="mt-2 font-serif text-lg leading-tight">
-                    {p.gelar_depan ? `${p.gelar_depan} ` : ""}
-                    {p.pamong_nama}
-                    {p.gelar_belakang ? `, ${p.gelar_belakang}` : ""}
-                  </p>
-                  {p.pamong_niap ? (
-                    <p className="mt-2 text-xs text-ink-muted">
-                      NIAP: {p.pamong_niap}
-                    </p>
-                  ) : null}
-                  {p.no_hp ? (
-                    <p className="mt-1 text-xs text-ink-muted">
-                      HP: {p.no_hp}
-                    </p>
-                  ) : null}
-                </li>
-              ))}
+            <ul className="grid gap-6 sm:grid-cols-2">
+              {pamong.map((p) => {
+                const namaTuntas = namaLengkap(
+                  p.pamong_nama,
+                  p.gelar_depan,
+                  p.gelar_belakang,
+                );
+                return (
+                  <li
+                    key={p.id}
+                    className="border border-ink/15 bg-paper overflow-hidden"
+                  >
+                    {/* Foto perangkat */}
+                    {p.foto ? (
+                      <div className="aspect-square overflow-hidden bg-paper-dim">
+                        <img
+                          src={`/${p.foto}`}
+                          alt={`${p.jabatan?.nama ?? "Perangkat Desa"} - ${p.pamong_nama}`}
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex aspect-square items-center justify-center bg-paper-dim">
+                        <span className="text-3xl font-serif text-ink/20">
+                          {(p.pamong_nama ?? "?")[0]}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Info perangkat */}
+                    <div className="p-5">
+                      <p className="meta">
+                        {p.jabatan?.nama ?? "Perangkat Desa"}
+                      </p>
+                      <p className="mt-2 font-serif text-lg leading-tight">
+                        {namaTuntas}
+                      </p>
+                      {p.pamong_niap ? (
+                        <p className="mt-2 text-xs text-ink-muted">
+                          NIAP: {p.pamong_niap}
+                        </p>
+                      ) : null}
+                      {p.no_hp ? (
+                        <p className="mt-1 text-xs text-ink-muted">
+                          HP: {p.no_hp}
+                        </p>
+                      ) : null}
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
@@ -91,7 +137,7 @@ export default async function PemerintahanPage() {
             Daftar lembaga desa dapat dilihat pada direktori:
           </p>
           <Link href="/direktori?kategori=lembaga" className="link-clay mt-2 inline-block">
-            Buka Direktori Lembaga →
+            Buka Direktori Lembaga
           </Link>
         </aside>
       </section>

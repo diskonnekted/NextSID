@@ -18,6 +18,7 @@ import {
   ubahPermohonan,
   setStatusPermohonan,
   hapusPermohonan,
+  cetakDariPermohonan,
   tambahDokumen,
   ubahDokumen,
   softHapusDokumen,
@@ -41,6 +42,24 @@ function fdBool(fd: FormData, key: string, defaultVal = 0): number {
   const v = fd.get(key);
   if (v === null) return defaultVal;
   return v === "1" || v === "on" || v === "true" ? 1 : 0;
+}
+
+function buildMarginJson(fd: FormData): string | undefined {
+  const kiri = fd.get("margin_kiri");
+  const atas = fd.get("margin_atas");
+  const kanan = fd.get("margin_kanan");
+  const bawah = fd.get("margin_bawah");
+  // Jika ada field margin_kiri (baru dari form), build JSON
+  if (kiri !== null || atas !== null || kanan !== null || bawah !== null) {
+    const obj: Record<string, number> = {};
+    if (kiri !== null && kiri !== "") obj.kiri = Number(kiri) || 1.78;
+    if (atas !== null && atas !== "") obj.atas = Number(atas) || 0.63;
+    if (kanan !== null && kanan !== "") obj.kanan = Number(kanan) || 1.78;
+    if (bawah !== null && bawah !== "") obj.bawah = Number(bawah) || 1.37;
+    return JSON.stringify(obj);
+  }
+  // Fallback: field margin tunggal (lama)
+  return fdStr(fd, "margin");
 }
 
 // ---- SURAT FORMAT ----
@@ -69,7 +88,7 @@ export async function aksiTambahFormat(fd: FormData) {
     kode_isian: fdStr(fd, "kode_isian"),
     orientasi: fdStr(fd, "orientasi"),
     ukuran: fdStr(fd, "ukuran"),
-    margin: fdStr(fd, "margin"),
+    margin: buildMarginJson(fd),
     margin_global: fdInt(fd, "margin_global") ?? 1,
     footer: fdBool(fd, "footer", 1),
     header: fdBool(fd, "header", 1),
@@ -104,7 +123,7 @@ export async function aksiUbahFormat(fd: FormData) {
     kode_isian: fdStr(fd, "kode_isian"),
     orientasi: fdStr(fd, "orientasi"),
     ukuran: fdStr(fd, "ukuran"),
-    margin: fdStr(fd, "margin"),
+    margin: buildMarginJson(fd),
     margin_global: fdInt(fd, "margin_global"),
     footer: fdBool(fd, "footer", 1),
     header: fdBool(fd, "header", 1),
@@ -264,6 +283,12 @@ export async function aksiHapusPermohonan(fd: FormData) {
   const id = fdInt(fd, "id");
   if (!id) throw new Error("ID permohonan wajib diisi.");
   await hapusPermohonan(id);
+}
+
+export async function aksiCetakDariPermohonan(fd: FormData) {
+  const id = fdInt(fd, "id");
+  if (!id) throw new Error("ID permohonan wajib diisi.");
+  await cetakDariPermohonan(id);
 }
 
 // ---- DOKUMEN ----

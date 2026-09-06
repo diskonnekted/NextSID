@@ -9,6 +9,7 @@ import {
   aksiUbahPermohonan,
   aksiSetStatusPermohonan,
   aksiHapusPermohonan,
+  aksiCetakDariPermohonan,
 } from "@/modules/surat/handler";
 
 type Permohonan = {
@@ -154,9 +155,15 @@ function Tabel({ items }: { items: Permohonan[] }) {
                   </td>
                   <td className="px-3 py-2 text-xs">{p.no_hp_aktif || "—"}</td>
                   <td className="px-3 py-2 text-right">
+                    <a
+                      href={`/admin/surat/cetak/${p.id}`}
+                      className="text-clay hover:underline"
+                    >
+                      Cetak
+                    </a>
                     <button
                       type="button"
-                      className="text-clay hover:underline"
+                      className="ml-3 text-clay hover:underline"
                       onClick={() => setEditingId(p.id)}
                     >
                       Ubah

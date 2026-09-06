@@ -6,6 +6,7 @@
 // 3 varian: kartu | ringkas (untuk sidebar) | mini (untuk beranda).
 
 import Link from "next/link";
+import Image from "next/image";
 import type { ReactNode } from "react";
 
 export type DirektoriItem = {
@@ -17,6 +18,8 @@ export type DirektoriItem = {
   alamat?: string | null;
   kontak?: string | null;
   ikon?: ReactNode;
+  /** Gambar/kartu nama dari folder bahan (opsional) */
+  customIcon?: string;
 };
 
 export type DirektoriCardVarian = "kartu" | "ringkas" | "mini";
@@ -103,15 +106,26 @@ export function DirektoriCard({ item, varian = "kartu" }: Props) {
   // kartu
   return (
     <article className="group flex h-full flex-col overflow-hidden border border-ink/15 bg-paper transition-colors hover:border-clay">
-      {/* Plate atas: inisial / ikon. TownPress pakai foto logo; kita pakai
-          plate monogram supaya kartu tetap informatif walau tanpa gambar. */}
+      {/* Plate atas: gambar custom atau inisial monogram */}
       <div className="flex items-start gap-3 border-b border-ink/10 p-4">
-        <div
-          className="flex h-11 w-11 shrink-0 items-center justify-center border border-ink/15 bg-paper-dim font-serif text-lg text-clay"
-          aria-hidden="true"
-        >
-          {huruf(item.judul)}
-        </div>
+        {item.customIcon ? (
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden border border-ink/15 bg-paper-dim">
+            <Image
+              src={item.customIcon}
+              alt={`${item.judul} logo`}
+              width={44}
+              height={44}
+              className="h-full w-full object-contain"
+            />
+          </div>
+        ) : (
+          <div
+            className="flex h-11 w-11 shrink-0 items-center justify-center border border-ink/15 bg-paper-dim font-serif text-lg text-clay"
+            aria-hidden="true"
+          >
+            {huruf(item.judul)}
+          </div>
+        )}
         <div className="min-w-0 flex-1">
           <p className="meta truncate">{item.kategori}</p>
           <Link href={href}>
@@ -135,7 +149,7 @@ export function DirektoriCard({ item, varian = "kartu" }: Props) {
         href={href}
         className="meta border-t border-ink/10 px-4 py-3 normal-case tracking-normal hover:bg-paper-dim"
       >
-        Buka Detail →
+        Buka Detail
       </Link>
     </article>
   );

@@ -3,7 +3,8 @@
 import { ambilDaftarLembaga } from "@/modules/info-desa";
 import PanelLembaga from "./_panel";
 
-export const dynamic = "force-dynamic";
+export const dynamic = "force-static";
+export const revalidate = 60;
 
 export default async function AdminLembagaPage() {
   const daftar = await ambilDaftarLembaga();

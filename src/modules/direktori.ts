@@ -22,6 +22,37 @@ function keSlug(s: string): string {
     .slice(0, 80);
 }
 
+// Mapping kategori/slug ke gambar di folder /bahan
+const GAMBAR_MAP: Record<string, string> = {
+  "badan-permusyawaratan-desa": "/bahan/badan-permusyawaratan-desa.PNG",
+  "lembaga-pemberdayaan-masyarakat": "/bahan/lembaga-pemberdayaan-masyarakat.PNG",
+  "pkk": "/bahan/pkk-desa.PNG",
+  "pkk-desa": "/bahan/pkk-desa.PNG",
+  "karang-taruna": "/bahan/karang-taruna.PNG",
+  "pengaduan": "/bahan/pengaduan.PNG",
+};
+
+function cariGambar(judul: string, kategori: string): string | undefined {
+  // Coba match berdasarkan slug judul
+  const slug = keSlug(judul);
+  if (GAMBAR_MAP[slug]) return GAMBAR_MAP[slug];
+  // Coba match berdasarkan kategori (case-insensitive)
+  const katLower = kategori.toLowerCase();
+  if (GAMBAR_MAP[katLower]) return GAMBAR_MAP[katLower];
+  // Coba match berdasarkan slug kategori
+  const slugKategori = keSlug(kategori);
+  if (GAMBAR_MAP[slugKategori]) return GAMBAR_MAP[slugKategori];
+  // Coba match berdasarkan substring di slug judul (misal "pkk-desa-cintamulya" match "pkk")
+  for (const [key, url] of Object.entries(GAMBAR_MAP)) {
+    if (slug.includes(key) || key.includes(slug)) return url;
+  }
+  // Coba match substring di kategori
+  for (const [key, url] of Object.entries(GAMBAR_MAP)) {
+    if (katLower.includes(key) || key.includes(katLower)) return url;
+  }
+  return undefined;
+}
+
 export async function ambilDirektori(): Promise<DirektoriItem[]> {
   const [lembaga, layanan, pamong] = await Promise.all([
     ambilDaftarLembaga(),
@@ -43,6 +74,7 @@ export async function ambilDirektori(): Promise<DirektoriItem[]> {
       kontak: [l.ketua && `Ketua: ${l.ketua}`, l.sekretaris && `Sekretaris: ${l.sekretaris}`]
         .filter(Boolean)
         .join(" · "),
+      customIcon: cariGambar(l.nama, l.singkatan ?? ""),
     });
   }
 
@@ -56,6 +88,7 @@ export async function ambilDirektori(): Promise<DirektoriItem[]> {
       kategori: y.kategori ?? "Layanan",
       kontak: y.kontak ?? y.url_form ?? null,
       alamat: y.keterangan ?? null,
+      customIcon: cariGambar(y.nama, y.kategori ?? ""),
     });
   }
 
@@ -70,6 +103,7 @@ export async function ambilDirektori(): Promise<DirektoriItem[]> {
       kontak: [p.gelar_depan, p.pamong_nama, p.gelar_belakang].filter(Boolean).join(" ")
         ? undefined
         : "Perangkat Desa",
+      customIcon: p.foto ? `/${p.foto}` : undefined,
     });
   }
 

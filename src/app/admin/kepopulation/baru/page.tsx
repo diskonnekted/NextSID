@@ -7,7 +7,8 @@ import { ambilReferensiPenduduk } from "@/modules/kependudukan";
 import { ambilDaftarKKUntukDropdown } from "@/modules/kependudukan/handler";
 import FormPendudukBaru from "./_form";
 
-export const dynamic = "force-dynamic";
+export const dynamic = "force-static";
+export const revalidate = 60;
 
 type Ref = { id: number; nama: string };
 type KKOption = { no_kk: string; kepala: string | null };

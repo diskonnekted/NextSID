@@ -8,13 +8,15 @@ const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
   display: "swap",
+  preload: true,
 });
 
 const fraunces = Fraunces({
+  weight: ["300", "400", "500", "600", "700"],
   subsets: ["latin"],
   variable: "--font-fraunces",
   display: "swap",
-  axes: ["opsz"],
+  preload: true,
 });
 
 export const metadata: Metadata = {
@@ -48,6 +50,7 @@ export default async function RootLayout({
       className={`${inter.variable} ${fraunces.variable}`}
     >
       <head>
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         {/* Pre-hydration script: set data-theme + data-mode SEBELUM React mount
             untuk mencegah flash of wrong theme saat switch. Aman dieksekusi
             berulang karena idempotent (cuma baca cookie + set attribute). */}

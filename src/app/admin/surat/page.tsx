@@ -5,7 +5,8 @@
 import Link from "next/link";
 import { ambilRingkasanSurat } from "@/modules/surat";
 
-export const dynamic = "force-dynamic";
+export const dynamic = "force-static";
+export const revalidate = 60;
 
 export default async function AdminSuratPage() {
   const r = await ambilRingkasanSurat();

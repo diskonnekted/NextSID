@@ -18,11 +18,26 @@ type Format = {
   id: number;
   nama: string;
   url_surat: string;
-  kode_surat: string;
+  kode_surat: string | null;
+  lampiran: string | null;
   kunci: number;
   favorit: number;
   jenis: number;
   mandiri: number;
+  masa_berlaku: number | null;
+  satuan_masa_berlaku: string | null;
+  qr_code: number;
+  logo_garuda: number;
+  kecamatan: number;
+  header: number;
+  footer: number;
+  orientasi: string | null;
+  ukuran: string | null;
+  margin: string | null;
+  format_nomor: string | null;
+  template: string | null;
+  form_isian: string | null;
+  kode_isian: string | null;
   syarat_ids: number[];
 };
 
@@ -37,6 +52,10 @@ function labelJenis(j: number) {
       4: "Layanan Mandiri",
     }[j] ?? `Jenis ${j}`
   );
+}
+
+function labelOrientasi(o: string | null) {
+  return o === "Lanscape" ? "Landscape" : o === "Potrait" ? "Portrait" : o ?? "—";
 }
 
 export default function PanelFormat({
@@ -81,6 +100,7 @@ function TabelFormat({ items, syarat }: { items: Format[]; syarat: Syarat[] }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [expandingId, setExpandingId] = useState<number | null>(null);
 
   if (items.length === 0) {
     return (
@@ -116,7 +136,58 @@ function TabelFormat({ items, syarat }: { items: Format[]; syarat: Syarat[] }) {
                 </td>
               ) : (
                 <>
-                  <td className="px-3 py-2 font-medium">{f.nama}</td>
+                  <td className="px-3 py-2 font-medium">
+                    <button
+                      type="button"
+                      className="text-clay hover:underline"
+                      onClick={() =>
+                        setExpandingId(expandingId === f.id ? null : f.id)
+                      }
+                    >
+                      {f.nama}
+                    </button>
+                    {/* Detail ringkas */}
+                    {expandingId === f.id && (
+                      <div className="mt-2 rounded border border-ink/10 bg-paper-dim p-3 text-xs space-y-1">
+                        {f.template && (
+                          <p>
+                            <span className="text-ink-muted">Template:</span>{" "}
+                            {f.template.length} karakter
+                          </p>
+                        )}
+                        {f.form_isian && (
+                          <p>
+                            <span className="text-ink-muted">Form Isian:</span>{" "}
+                            {f.form_isian.length} karakter
+                          </p>
+                        )}
+                        {f.kode_isian && (
+                          <p>
+                            <span className="text-ink-muted">Kode Isian:</span>{" "}
+                            {f.kode_isian.length} karakter
+                          </p>
+                        )}
+                        {f.orientasi && (
+                          <p>
+                            <span className="text-ink-muted">Orientasi:</span>{" "}
+                            {labelOrientasi(f.orientasi)}
+                          </p>
+                        )}
+                        {f.ukuran && (
+                          <p>
+                            <span className="text-ink-muted">Ukuran:</span>{" "}
+                            {f.ukuran}
+                          </p>
+                        )}
+                        {f.format_nomor && (
+                          <p>
+                            <span className="text-ink-muted">Format Nomor:</span>{" "}
+                            {f.format_nomor}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </td>
                   <td className="px-3 py-2 text-ink-muted">
                     <div>{f.url_surat || "—"}</div>
                     {f.kode_surat && (
@@ -193,6 +264,7 @@ function FormFormatBaru({ syarat }: { syarat: Syarat[] }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [err, setErr] = useState<string | null>(null);
+  const [showMore, setShowMore] = useState(false);
 
   return (
     <form
@@ -209,7 +281,16 @@ function FormFormatBaru({ syarat }: { syarat: Syarat[] }) {
       }}
       className="border border-ink/15 bg-paper p-6 space-y-4"
     >
-      <h4 className="font-serif text-lg">Tambah Template Baru</h4>
+      <div className="flex items-center justify-between">
+        <h4 className="font-serif text-lg">Tambah Template Baru</h4>
+        <button
+          type="button"
+          onClick={() => setShowMore(!showMore)}
+          className="text-xs text-clay hover:underline"
+        >
+          {showMore ? "Sembunyikan" : "Tampilkan semua field"} ↓
+        </button>
+      </div>
       {err && (
         <p className="border border-clay bg-clay/10 px-3 py-2 text-sm text-clay">
           {err}
@@ -236,6 +317,15 @@ function FormFormatBaru({ syarat }: { syarat: Syarat[] }) {
           <span className="meta mb-1 block">Kode Surat</span>
           <input
             name="kode_surat"
+            placeholder="mis. S-01, 500"
+            className="w-full border border-ink/20 bg-paper px-3 py-2 text-sm"
+          />
+        </label>
+        <label className="block">
+          <span className="meta mb-1 block">Lampiran</span>
+          <input
+            name="lampiran"
+            placeholder="mis. F-1.08"
             className="w-full border border-ink/20 bg-paper px-3 py-2 text-sm"
           />
         </label>
@@ -243,14 +333,22 @@ function FormFormatBaru({ syarat }: { syarat: Syarat[] }) {
           <span className="meta mb-1 block">Jenis</span>
           <select
             name="jenis"
-            defaultValue="2"
+            defaultValue="3"
             className="w-full border border-ink/20 bg-paper px-3 py-2 text-sm"
           >
             <option value="1">Surat Desa</option>
             <option value="2">Surat Keterangan</option>
-            <option value="3">Surat Izin</option>
+            <option value="3">Surat Sistem</option>
             <option value="4">Layanan Mandiri</option>
           </select>
+        </label>
+        <label className="block">
+          <span className="meta mb-1 block">Format Nomor</span>
+          <input
+            name="format_nomor"
+            placeholder="mis. 001/{Bulan}/{Tahun}"
+            className="w-full border border-ink/20 bg-paper px-3 py-2 text-sm"
+          />
         </label>
         <label className="block">
           <span className="meta mb-1 block">Masa Berlaku (angka)</span>
@@ -276,6 +374,121 @@ function FormFormatBaru({ syarat }: { syarat: Syarat[] }) {
         </label>
       </div>
 
+      {/* Template HTML */}
+      <label className="block">
+        <span className="meta mb-1 block">Template HTML</span>
+        <textarea
+          name="template"
+          rows={6}
+          placeholder="Paste HTML template surat di sini…"
+          className="w-full border border-ink/20 bg-paper px-3 py-2 text-sm font-mono"
+        />
+      </label>
+
+      {/* Form Isian & Kode Isian */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <label className="block">
+          <span className="meta mb-1 block">Form Isian (JSON)</span>
+          <textarea
+            name="form_isian"
+            rows={4}
+            placeholder='{"individu":{"data":[1],"sex":"","status_dasar":[1]}}'
+            className="w-full border border-ink/20 bg-paper px-3 py-2 text-sm font-mono"
+          />
+        </label>
+        <label className="block">
+          <span className="meta mb-1 block">Kode Isian (JSON)</span>
+          <textarea
+            name="kode_isian"
+            rows={4}
+            placeholder='[{"tipe":"text","kode":"[form_nama]","nama":"Nama","required":"1"}]'
+            className="w-full border border-ink/20 bg-paper px-3 py-2 text-sm font-mono"
+          />
+        </label>
+      </div>
+
+      {/* More fields */}
+      {showMore && (
+        <div className="space-y-4 border-t border-ink/10 pt-4">
+          <div className="grid gap-4 sm:grid-cols-3">
+            <label className="block">
+              <span className="meta mb-1 block">Orientasi</span>
+              <select
+                name="orientasi"
+                defaultValue="Potrait"
+                className="w-full border border-ink/20 bg-paper px-3 py-2 text-sm"
+              >
+                <option value="Potrait">Portrait</option>
+                <option value="Lanscape">Landscape</option>
+              </select>
+            </label>
+            <label className="block">
+              <span className="meta mb-1 block">Ukuran Kertas</span>
+              <select
+                name="ukuran"
+                defaultValue="F4"
+                className="w-full border border-ink/20 bg-paper px-3 py-2 text-sm"
+              >
+                <option value="F4">F4 (Folio)</option>
+                <option value="A4">A4</option>
+                <option value="A3">A3</option>
+                <option value="A5">A5</option>
+              </select>
+            </label>
+            <label className="block">
+              <span className="meta mb-1 block">Margin (kiri,cm)</span>
+              <input
+                name="margin_kiri"
+                type="number"
+                step="0.01"
+                defaultValue="1.78"
+                className="w-full border border-ink/20 bg-paper px-3 py-2 text-sm"
+              />
+            </label>
+          </div>
+
+          <fieldset className="grid gap-3 sm:grid-cols-4">
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" name="favorit" value="1" />
+              <span>Favorit</span>
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" name="mandiri" value="1" />
+              <span>Layanan Mandiri</span>
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" name="kunci" value="1" />
+              <span>Template dikunci</span>
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" name="qr_code" value="1" />
+              <span>QR Code</span>
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" name="logo_garuda" value="1" />
+              <span>Logo Garuda</span>
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" name="header" defaultChecked value="1" />
+              <span>Tampilkan Header</span>
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" name="footer" defaultChecked value="1" />
+              <span>Tampilkan Footer</span>
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                name="kecamatan"
+                defaultChecked
+                value="1"
+              />
+              <span>Perlu Kecamatan</span>
+            </label>
+          </fieldset>
+        </div>
+      )}
+
       {syarat.length > 0 && (
         <fieldset>
           <legend className="meta mb-2">Syarat yang dibutuhkan</legend>
@@ -289,21 +502,6 @@ function FormFormatBaru({ syarat }: { syarat: Syarat[] }) {
           </div>
         </fieldset>
       )}
-
-      <fieldset className="grid gap-3 sm:grid-cols-3">
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" name="favorit" value="1" />
-          <span>Favorit</span>
-        </label>
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" name="mandiri" value="1" />
-          <span>Layanan Mandiri</span>
-        </label>
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" name="kunci" value="1" />
-          <span>Template dikunci</span>
-        </label>
-      </fieldset>
 
       <button
         type="submit"
@@ -328,6 +526,7 @@ function FormEditFormat({
   const router = useRouter();
   const [pending, start] = useTransition();
   const [err, setErr] = useState<string | null>(null);
+  const [showMore, setShowMore] = useState(false);
   const isLocked = f.kunci === 1;
 
   return (
@@ -352,6 +551,17 @@ function FormEditFormat({
           {err}
         </p>
       )}
+      <div className="flex items-center justify-between">
+        <h4 className="font-serif text-base">Edit Template</h4>
+        <button
+          type="button"
+          onClick={() => setShowMore(!showMore)}
+          className="text-xs text-clay hover:underline"
+        >
+          {showMore ? "Sembunyikan" : "Tampilkan semua field"} ↓
+        </button>
+      </div>
+
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="block">
           <span className="meta mb-1 block">Nama *</span>
@@ -367,7 +577,7 @@ function FormEditFormat({
           <span className="meta mb-1 block">URL Surat</span>
           <input
             name="url_surat"
-            defaultValue={f.url_surat}
+            defaultValue={f.url_surat || ""}
             disabled={isLocked}
             className="w-full border border-ink/20 bg-paper px-3 py-2 text-sm disabled:bg-paper-dim"
           />
@@ -376,7 +586,16 @@ function FormEditFormat({
           <span className="meta mb-1 block">Kode Surat</span>
           <input
             name="kode_surat"
-            defaultValue={f.kode_surat}
+            defaultValue={f.kode_surat || ""}
+            disabled={isLocked}
+            className="w-full border border-ink/20 bg-paper px-3 py-2 text-sm disabled:bg-paper-dim"
+          />
+        </label>
+        <label className="block">
+          <span className="meta mb-1 block">Lampiran</span>
+          <input
+            name="lampiran"
+            defaultValue={f.lampiran || ""}
             disabled={isLocked}
             className="w-full border border-ink/20 bg-paper px-3 py-2 text-sm disabled:bg-paper-dim"
           />
@@ -391,11 +610,216 @@ function FormEditFormat({
           >
             <option value="1">Surat Desa</option>
             <option value="2">Surat Keterangan</option>
-            <option value="3">Surat Izin</option>
+            <option value="3">Surat Sistem</option>
             <option value="4">Layanan Mandiri</option>
           </select>
         </label>
+        <label className="block">
+          <span className="meta mb-1 block">Format Nomor</span>
+          <input
+            name="format_nomor"
+            defaultValue={f.format_nomor || ""}
+            disabled={isLocked}
+            className="w-full border border-ink/20 bg-paper px-3 py-2 text-sm disabled:bg-paper-dim"
+          />
+        </label>
+        <label className="block">
+          <span className="meta mb-1 block">Masa Berlaku</span>
+          <input
+            name="masa_berlaku"
+            type="number"
+            min={0}
+            defaultValue={f.masa_berlaku ?? ""}
+            disabled={isLocked}
+            className="w-full border border-ink/20 bg-paper px-3 py-2 text-sm disabled:bg-paper-dim"
+          />
+        </label>
+        <label className="block">
+          <span className="meta mb-1 block">Satuan Masa Berlaku</span>
+          <select
+            name="satuan_masa_berlaku"
+            defaultValue={f.satuan_masa_berlaku || ""}
+            disabled={isLocked}
+            className="w-full border border-ink/20 bg-paper px-3 py-2 text-sm disabled:bg-paper-dim"
+          >
+            <option value="">— Tidak ada —</option>
+            <option value="hari">hari</option>
+            <option value="bulan">bulan</option>
+            <option value="tahun">tahun</option>
+          </select>
+        </label>
       </div>
+
+      {/* Template HTML */}
+      <label className="block">
+        <span className="meta mb-1 block">Template HTML</span>
+        <textarea
+          name="template"
+          rows={8}
+          defaultValue={f.template || ""}
+          disabled={isLocked}
+          className="w-full border border-ink/20 bg-paper px-3 py-2 text-sm font-mono disabled:bg-paper-dim"
+        />
+      </label>
+
+      {/* Form Isian & Kode Isian */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <label className="block">
+          <span className="meta mb-1 block">Form Isian (JSON)</span>
+          <textarea
+            name="form_isian"
+            rows={4}
+            defaultValue={f.form_isian || ""}
+            disabled={isLocked}
+            className="w-full border border-ink/20 bg-paper px-3 py-2 text-sm font-mono disabled:bg-paper-dim"
+          />
+        </label>
+        <label className="block">
+          <span className="meta mb-1 block">Kode Isian (JSON)</span>
+          <textarea
+            name="kode_isian"
+            rows={4}
+            defaultValue={f.kode_isian || ""}
+            disabled={isLocked}
+            className="w-full border border-ink/20 bg-paper px-3 py-2 text-sm font-mono disabled:bg-paper-dim"
+          />
+        </label>
+      </div>
+
+      {/* More fields */}
+      {showMore && (
+        <div className="space-y-4 border-t border-ink/10 pt-4">
+          <div className="grid gap-4 sm:grid-cols-3">
+            <label className="block">
+              <span className="meta mb-1 block">Orientasi</span>
+              <select
+                name="orientasi"
+                defaultValue={f.orientasi || "Potrait"}
+                disabled={isLocked}
+                className="w-full border border-ink/20 bg-paper px-3 py-2 text-sm disabled:bg-paper-dim"
+              >
+                <option value="Potrait">Portrait</option>
+                <option value="Lanscape">Landscape</option>
+              </select>
+            </label>
+            <label className="block">
+              <span className="meta mb-1 block">Ukuran Kertas</span>
+              <select
+                name="ukuran"
+                defaultValue={f.ukuran || "F4"}
+                disabled={isLocked}
+                className="w-full border border-ink/20 bg-paper px-3 py-2 text-sm disabled:bg-paper-dim"
+              >
+                <option value="F4">F4 (Folio)</option>
+                <option value="A4">A4</option>
+                <option value="A3">A3</option>
+                <option value="A5">A5</option>
+              </select>
+            </label>
+            <label className="block">
+              <span className="meta mb-1 block">Margin (kiri,cm)</span>
+              <input
+                name="margin_kiri"
+                type="number"
+                step="0.01"
+                defaultValue={(() => {
+                  try {
+                    const m = JSON.parse(f.margin || "{}");
+                    return m.kiri ?? 1.78;
+                  } catch {
+                    return 1.78;
+                  }
+                })()}
+                disabled={isLocked}
+                className="w-full border border-ink/20 bg-paper px-3 py-2 text-sm disabled:bg-paper-dim"
+              />
+            </label>
+          </div>
+
+          <fieldset className="grid gap-3 sm:grid-cols-4">
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                name="favorit"
+                value="1"
+                defaultChecked={f.favorit === 1}
+                disabled={isLocked}
+              />
+              <span>Favorit</span>
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                name="mandiri"
+                value="1"
+                defaultChecked={f.mandiri === 1}
+                disabled={isLocked}
+              />
+              <span>Layanan Mandiri</span>
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                name="kunci"
+                value="1"
+                defaultChecked={f.kunci === 1}
+                disabled={isLocked}
+              />
+              <span>Template dikunci</span>
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                name="qr_code"
+                value="1"
+                defaultChecked={f.qr_code === 1}
+                disabled={isLocked}
+              />
+              <span>QR Code</span>
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                name="logo_garuda"
+                value="1"
+                defaultChecked={f.logo_garuda === 1}
+                disabled={isLocked}
+              />
+              <span>Logo Garuda</span>
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                name="header"
+                defaultChecked={f.header === 1}
+                value="1"
+                disabled={isLocked}
+              />
+              <span>Tampilkan Header</span>
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                name="footer"
+                defaultChecked={f.footer === 1}
+                value="1"
+                disabled={isLocked}
+              />
+              <span>Tampilkan Footer</span>
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                name="kecamatan"
+                defaultChecked={f.kecamatan === 1}
+                value="1"
+                disabled={isLocked}
+              />
+              <span>Perlu Kecamatan</span>
+            </label>
+          </fieldset>
+        </div>
+      )}
 
       <fieldset>
         <legend className="meta mb-2">Syarat</legend>

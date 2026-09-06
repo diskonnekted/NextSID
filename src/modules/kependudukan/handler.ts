@@ -427,8 +427,35 @@ async function editPendudukInternal(args: {
   pekerjaan_id?: number | null | undefined;
   status_kawin?: number | null | undefined;
   pendidikan_kk_id?: number | null | undefined;
+  pendidikan_sedang_id?: number | null | undefined;
   warganegara_id?: number | null | undefined;
   golongan_darah_id?: number | null | undefined;
+  cacat_id?: number | null | undefined;
+  cara_kb_id?: number | null | undefined;
+  hamil?: number | null | undefined;
+  ktp_el?: number | null | undefined;
+  status_rekam?: number | null | undefined;
+  status_dasar?: number | null | undefined;
+  id_asuransi?: number | null | undefined;
+  ayah_nik?: string | null | undefined;
+  nama_ayah?: string | null | undefined;
+  ibu_nik?: string | null | undefined;
+  nama_ibu?: string | null | undefined;
+  akta_lahir?: string | null | undefined;
+  dokumen_pasport?: string | null | undefined;
+  tanggal_akhir_paspor?: Date | null | undefined;
+  dokumen_kitas?: string | null | undefined;
+  akta_perkawinan?: string | null | undefined;
+  tanggalperkawinan?: Date | null | undefined;
+  akta_perceraian?: string | null | undefined;
+  tanggalperceraian?: Date | null | undefined;
+  alamat_sekarang?: string | null | undefined;
+  suku?: string | null | undefined;
+  tag_id_card?: string | null | undefined;
+  no_asuransi?: string | null | undefined;
+  lat?: string | null | undefined;
+  lng?: string | null | undefined;
+  foto?: string | null | undefined;
 }): Promise<void> {
   const existing = await prisma.penduduk.findUnique({ where: { nik: args.nikAsal } });
   if (!existing) throw new Error(`Penduduk NIK ${args.nikAsal} tidak ditemukan.`);
@@ -452,8 +479,35 @@ async function editPendudukInternal(args: {
   if (args.pekerjaan_id !== undefined) updateData.pekerjaan_id = args.pekerjaan_id ?? null;
   if (args.status_kawin !== undefined) updateData.status_kawin = args.status_kawin ?? null;
   if (args.pendidikan_kk_id !== undefined) updateData.pendidikan_kk_id = args.pendidikan_kk_id ?? null;
+  if (args.pendidikan_sedang_id !== undefined) updateData.pendidikan_sedang_id = args.pendidikan_sedang_id ?? null;
   if (args.warganegara_id !== undefined) updateData.warganegara_id = args.warganegara_id ?? null;
   if (args.golongan_darah_id !== undefined) updateData.golongan_darah_id = args.golongan_darah_id ?? null;
+  if (args.cacat_id !== undefined) updateData.cacat_id = args.cacat_id ?? null;
+  if (args.cara_kb_id !== undefined) updateData.cara_kb_id = args.cara_kb_id ?? null;
+  if (args.hamil !== undefined) updateData.hamil = args.hamil ?? null;
+  if (args.ktp_el !== undefined) updateData.ktp_el = args.ktp_el ?? null;
+  if (args.status_rekam !== undefined) updateData.status_rekam = args.status_rekam ?? null;
+  if (args.status_dasar !== undefined) updateData.status_dasar = args.status_dasar ?? null;
+  if (args.id_asuransi !== undefined) updateData.id_asuransi = args.id_asuransi ?? null;
+  if (args.ayah_nik !== undefined) updateData.ayah_nik = args.ayah_nik ?? null;
+  if (args.nama_ayah !== undefined) updateData.nama_ayah = args.nama_ayah ?? null;
+  if (args.ibu_nik !== undefined) updateData.ibu_nik = args.ibu_nik ?? null;
+  if (args.nama_ibu !== undefined) updateData.nama_ibu = args.nama_ibu ?? null;
+  if (args.akta_lahir !== undefined) updateData.akta_lahir = args.akta_lahir ?? null;
+  if (args.dokumen_pasport !== undefined) updateData.dokumen_pasport = args.dokumen_pasport ?? null;
+  if (args.tanggal_akhir_paspor !== undefined) updateData.tanggal_akhir_paspor = args.tanggal_akhir_paspor ?? null;
+  if (args.dokumen_kitas !== undefined) updateData.dokumen_kitas = args.dokumen_kitas ?? null;
+  if (args.akta_perkawinan !== undefined) updateData.akta_perkawinan = args.akta_perkawinan ?? null;
+  if (args.tanggalperkawinan !== undefined) updateData.tanggalperkawinan = args.tanggalperkawinan ?? null;
+  if (args.akta_perceraian !== undefined) updateData.akta_perceraian = args.akta_perceraian ?? null;
+  if (args.tanggalperceraian !== undefined) updateData.tanggalperceraian = args.tanggalperceraian ?? null;
+  if (args.alamat_sekarang !== undefined) updateData.alamat_sekarang = args.alamat_sekarang ?? null;
+  if (args.suku !== undefined) updateData.suku = args.suku ?? null;
+  if (args.tag_id_card !== undefined) updateData.tag_id_card = args.tag_id_card ?? null;
+  if (args.no_asuransi !== undefined) updateData.no_asuransi = args.no_asuransi ?? null;
+  if (args.lat !== undefined) updateData.lat = args.lat ?? null;
+  if (args.lng !== undefined) updateData.lng = args.lng ?? null;
+  if (args.foto !== undefined) updateData.foto = args.foto ?? null;
 
   await prisma.penduduk.update({
     where: { nik: args.nikAsal },
@@ -482,8 +536,13 @@ export async function ambilDetailPenduduk(nik: string) {
       agama: true,
       pekerjaan: true,
       pendidikan_kk: true,
+      pendidikan_sedang: true,
       warganegara: true,
       golongan_darah: true,
+      cacat: true,
+      cara_kb: true,
+      status_dasar_ref: true,
+      asuransi: true,
       keluarga: { select: { no_kk: true, alamat: true, dusun: true, rw: true, rt: true } },
     },
   });
@@ -535,10 +594,42 @@ export async function ambilDetailPenduduk(nik: string) {
     pekerjaan_id: p.pekerjaan_id,
     pendidikan: p.pendidikan_kk?.nama ?? null,
     pendidikan_kk_id: p.pendidikan_kk_id,
+    pendidikan_sedang: p.pendidikan_sedang?.nama ?? null,
+    pendidikan_sedang_id: p.pendidikan_sedang_id,
     warganegara: p.warganegara?.nama ?? null,
     warganegara_id: p.warganegara_id,
     golongan_darah: p.golongan_darah?.nama ?? null,
     golongan_darah_id: p.golongan_darah_id,
+    cacat: p.cacat?.nama ?? null,
+    cacat_id: p.cacat_id,
+    cara_kb: p.cara_kb?.nama ?? null,
+    cara_kb_id: p.cara_kb_id,
+    hamil: p.hamil,
+    ktp_el: p.ktp_el,
+    status_rekam: p.status_rekam,
+    status_dasar: p.status_dasar,
+    status_dasar_ref: p.status_dasar_ref?.nama ?? null,
+    id_asuransi: p.id_asuransi,
+    asuransi: p.asuransi?.nama ?? null,
+    ayah_nik: p.ayah_nik,
+    nama_ayah: p.nama_ayah,
+    ibu_nik: p.ibu_nik,
+    nama_ibu: p.nama_ibu,
+    akta_lahir: p.akta_lahir,
+    dokumen_pasport: p.dokumen_pasport,
+    tanggal_akhir_paspor: p.tanggal_akhir_paspor,
+    dokumen_kitas: p.dokumen_kitas,
+    akta_perkawinan: p.akta_perkawinan,
+    tanggalperkawinan: p.tanggalperkawinan,
+    akta_perceraian: p.akta_perceraian,
+    tanggalperceraian: p.tanggalperceraian,
+    alamat_sekarang: p.alamat_sekarang,
+    suku: p.suku,
+    tag_id_card: p.tag_id_card,
+    no_asuransi: p.no_asuransi,
+    lat: p.lat,
+    lng: p.lng,
+    foto: p.foto,
     keluarga: p.keluarga,
     ayah,
     ibu,
@@ -604,8 +695,35 @@ export async function aksiEditPenduduk(formData: FormData) {
     pekerjaan_id: parseEditNum(formData.get("pekerjaan_id")),
     status_kawin: parseEditNum(formData.get("status_kawin")),
     pendidikan_kk_id: parseEditNum(formData.get("pendidikan_kk_id")),
+    pendidikan_sedang_id: parseEditNum(formData.get("pendidikan_sedang_id")),
     warganegara_id: parseEditNum(formData.get("warganegara_id")),
     golongan_darah_id: parseEditNum(formData.get("golongan_darah_id")),
+    cacat_id: parseEditNum(formData.get("cacat_id")),
+    cara_kb_id: parseEditNum(formData.get("cara_kb_id")),
+    hamil: parseEditNum(formData.get("hamil")),
+    ktp_el: parseEditNum(formData.get("ktp_el")),
+    status_rekam: parseEditNum(formData.get("status_rekam")),
+    status_dasar: parseEditNum(formData.get("status_dasar")),
+    id_asuransi: parseEditNum(formData.get("id_asuransi")),
+    ayah_nik: parseEditStr(formData.get("ayah_nik")),
+    nama_ayah: parseEditStr(formData.get("nama_ayah")),
+    ibu_nik: parseEditStr(formData.get("ibu_nik")),
+    nama_ibu: parseEditStr(formData.get("nama_ibu")),
+    akta_lahir: parseEditStr(formData.get("akta_lahir")),
+    dokumen_pasport: parseEditStr(formData.get("dokumen_pasport")),
+    tanggal_akhir_paspor: parseTanggal(formData.get("tanggal_akhir_paspor")),
+    dokumen_kitas: parseEditStr(formData.get("dokumen_kitas")),
+    akta_perkawinan: parseEditStr(formData.get("akta_perkawinan")),
+    tanggalperkawinan: parseTanggal(formData.get("tanggalperkawinan")),
+    akta_perceraian: parseEditStr(formData.get("akta_perceraian")),
+    tanggalperceraian: parseTanggal(formData.get("tanggalperceraian")),
+    alamat_sekarang: parseEditStr(formData.get("alamat_sekarang")),
+    suku: parseEditStr(formData.get("suku")),
+    tag_id_card: parseEditStr(formData.get("tag_id_card")),
+    no_asuransi: parseEditStr(formData.get("no_asuransi")),
+    lat: parseEditStr(formData.get("lat")),
+    lng: parseEditStr(formData.get("lng")),
+    foto: parseEditStr(formData.get("foto")),
   });
   revalidatePath("/admin/kependudukan");
   revalidatePath(`/admin/kependudukan/${str(formData.get("nikAsal"))}`);

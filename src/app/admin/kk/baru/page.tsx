@@ -7,7 +7,8 @@ import Link from "next/link";
 import { ambilReferensiPenduduk, ambilConfigId } from "@/modules/kependudukan";
 import FormKKBaru from "./_form";
 
-export const dynamic = "force-dynamic";
+export const dynamic = "force-static";
+export const revalidate = 60;
 
 // Serialisasi aman untuk client component: hanya field primitif.
 type Ref = { id: number; nama: string };

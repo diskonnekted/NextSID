@@ -1,6 +1,6 @@
 // Theme "nusantara" — partial footer.
-// Vibrant: background ink (gelap) dengan blok konten rounded,
-// gradient strip accent, dan ThemeSwitcher host di kolom bawah.
+// Solid background tanpa gradient dekoratif. Pemakai garis tipis sebagai
+// pemisah, warna kertas untuk kontras yang memadai di mode gelap.
 
 import Link from "next/link";
 import { ambilConfig, ambilMediaSosial } from "@/lib/queries";
@@ -15,12 +15,9 @@ export async function Footer() {
       data-chrome="public"
       className="mt-24 bg-ink text-paper"
     >
-      {/* Strip gradient di atas footer untuk pemisah visual yang vibrant */}
-      <div aria-hidden="true" className="gradient-block h-1.5" />
-
       <div className="container-page grid gap-10 py-14 lg:grid-cols-12">
         <div className="lg:col-span-5">
-          <p className="meta mb-3 text-accent">Sistem Informasi Desa</p>
+          <p className="meta mb-3 text-clay">Sistem Informasi Desa</p>
           <h2 className="font-serif text-headline leading-tight text-paper">
             {config?.nama_desa ?? "Desa"}
           </h2>
@@ -56,20 +53,20 @@ export async function Footer() {
         </div>
 
         <div className="lg:col-span-3">
-          <p className="meta mb-4 text-accent">Navigasi</p>
+          <p className="meta mb-4 text-clay">Navigasi</p>
           <ul className="space-y-2">
-            <li><Link href="/profil-desa" className="text-paper/85 hover:text-accent">Profil Desa</Link></li>
-            <li><Link href="/pemerintahan" className="text-paper/85 hover:text-accent">Pemerintahan</Link></li>
-            <li><Link href="/data-statistik" className="text-paper/85 hover:text-accent">Data Statistik</Link></li>
-            <li><Link href="/direktori" className="text-paper/85 hover:text-accent">Direktori</Link></li>
-            <li><Link href="/galeri" className="text-paper/85 hover:text-accent">Galeri</Link></li>
-            <li><Link href="/surat-mandiri" className="text-paper/85 hover:text-accent">Surat Mandiri</Link></li>
-            <li><Link href="/artikel" className="text-paper/85 hover:text-accent">Daftar Artikel</Link></li>
+            <li><Link href="/profil-desa" className="text-paper/85 hover:text-clay">Profil Desa</Link></li>
+            <li><Link href="/pemerintahan" className="text-paper/85 hover:text-clay">Pemerintahan</Link></li>
+            <li><Link href="/data-statistik" className="text-paper/85 hover:text-clay">Data Statistik</Link></li>
+            <li><Link href="/direktori" className="text-paper/85 hover:text-clay">Direktori</Link></li>
+            <li><Link href="/galeri" className="text-paper/85 hover:text-clay">Galeri</Link></li>
+            <li><Link href="/surat-mandiri" className="text-paper/85 hover:text-clay">Surat Mandiri</Link></li>
+            <li><Link href="/artikel" className="text-paper/85 hover:text-clay">Daftar Artikel</Link></li>
           </ul>
         </div>
 
         <div className="lg:col-span-4">
-          <p className="meta mb-4 text-accent">Media Sosial</p>
+          <p className="meta mb-4 text-clay">Media Sosial</p>
           {sosmed.length === 0 ? (
             <p className="text-sm text-paper/70">Belum ada tautan media sosial.</p>
           ) : (
@@ -80,7 +77,7 @@ export async function Footer() {
                     href={s.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-paper/85 hover:text-accent"
+                    className="text-paper/85 hover:text-clay"
                   >
                     {s.nama}
                   </a>
@@ -89,10 +86,10 @@ export async function Footer() {
             </ul>
           )}
 
-          <div className="mt-10 rounded-lg border border-paper/10 p-5">
+          <div className="mt-10 rounded border border-paper/10 p-5">
             <p className="meta text-paper/60">Tampilan</p>
             <p className="mt-1 text-xs text-paper/75">
-              Pilih tema & mode tampilan sesuai preferensi Anda.
+              Pilih tema dan mode tampilan sesuai preferensi Anda.
             </p>
             <div className="mt-3">
               <ThemeSwitcher />

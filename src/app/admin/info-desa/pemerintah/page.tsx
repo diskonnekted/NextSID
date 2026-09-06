@@ -4,7 +4,8 @@
 import { ambilDaftarJabatan, ambilDaftarPamong } from "@/modules/info-desa";
 import PanelPemerintah from "./_panel";
 
-export const dynamic = "force-dynamic";
+export const dynamic = "force-static";
+export const revalidate = 60;
 
 export default async function AdminPemerintahPage() {
   const [jabatan, pamongRaw] = await Promise.all([

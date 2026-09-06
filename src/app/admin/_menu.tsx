@@ -66,14 +66,6 @@ const IkonKategori: ComponentType<SVGProps<SVGSVGElement>> = (props) => (
   </svg>
 );
 
-const IkonGaleri: ComponentType<SVGProps<SVGSVGElement>> = (props) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
-    <rect x="3" y="5" width="18" height="14" rx="1" />
-    <circle cx="9" cy="11" r="2" />
-    <path d="m4 18 5-5 4 4 3-3 4 4" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
 const IkonKonfigurasi: ComponentType<SVGProps<SVGSVGElement>> = (props) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
     <circle cx="12" cy="12" r="3" />
@@ -363,13 +355,6 @@ export const menuAdmin: MenuSection[] = [
         label: "Kategori",
         deskripsi: "Pengelompokan artikel",
         ikon: IkonKategori,
-        rintisan: true,
-      },
-      {
-        href: "/admin/galeri",
-        label: "Galeri",
-        deskripsi: "Album foto kegiatan",
-        ikon: IkonGaleri,
         rintisan: true,
       },
     ],

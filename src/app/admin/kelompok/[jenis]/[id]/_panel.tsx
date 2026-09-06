@@ -1,235 +1,214 @@
-"use client";
-
-// Panel detail satu Kelompok.
-// Menampilkan komposisi (StatCell) + tabel anggota paginasi dengan
-// link ke detail per penduduk.
+// Halaman Kelompok.
+// Tabel rekap pengelompokan warga berdasarkan 6 referensi demografis:
+// Pekerjaan, Pendidikan, Agama, Status Kawin, Kewarganegaraan, Golongan
+// Darah. Jenis kelompok dipilih via searchParams (?jenis=pekerjaan).
+// Setiap baris menaut ke halaman detail per kelompok.
 
 import Link from "next/link";
+import {
+  JENIS_KELOMPOK,
+  LABEL_JENIS_KELOMPOK,
+  ambilRekapKelompok,
+  type JenisKelompok,
+} from "@/modules/kependudukan";
 
-type Info = {
-  jenis: string;
-  id: number;
-  nama: string;
-  total: number;
-  laki: number;
-  perempuan: number;
-};
+export const dynamic = "force-static";
+export const revalidate = 60;
 
-type Baris = {
-  id: number;
-  nik: string;
-  nama: string;
-  sex: number | null;
-  tempatlahir: string | null;
-  tanggallahir: string | null;
-  no_kk: string | null;
-  hubungan_kk: string | null;
-};
+type SearchParams = { jenis?: string };
 
-type Daftar = {
-  baris: Baris[];
-  total: number;
-  halaman: number;
-  perHalaman: number;
-  totalHalaman: number;
-};
-
-type Props = {
-  info: Info;
-  label: string;
-  daftar: Daftar;
-};
-
-function formatTanggalIndo(d: string | null | undefined): string {
-  if (!d) return "—";
-  const date = new Date(d);
-  if (isNaN(date.getTime())) return "—";
-  return date.toLocaleDateString("id-ID", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
+function isJenisKelompok(v: string | undefined): v is JenisKelompok {
+  return !!v && (JENIS_KELOMPOK as readonly string[]).includes(v);
 }
 
-function labelJK(sex: number | null): string {
-  if (sex === 1) return "L";
-  if (sex === 2) return "P";
-  return "—";
-}
-
-function StatCell({ label, value }: { label: string; value: number | string }) {
-  return (
-    <div className="border border-ink/15 bg-paper px-4 py-4">
-      <p className="meta">{label}</p>
-      <p className="mt-2 font-serif text-2xl tabular-nums">
-        {typeof value === "number"
-          ? value.toLocaleString("id-ID")
-          : value}
-      </p>
-    </div>
-  );
-}
-
-function Paginasi({
-  halaman,
-  totalHalaman,
-  baseHref,
+export default async function AdminKelompokPage({
+  searchParams,
 }: {
-  halaman: number;
-  totalHalaman: number;
-  baseHref: string;
+  searchParams: Promise<SearchParams>;
 }) {
-  if (totalHalaman <= 1) return null;
-  const prev = Math.max(1, halaman - 1);
-  const next = Math.min(totalHalaman, halaman + 1);
-  return (
-    <nav className="mt-4 flex items-center justify-between gap-2 border-t border-ink/10 pt-3 text-sm">
-      <p className="meta">
-        Halaman {halaman} dari {totalHalaman}
-      </p>
-      <div className="flex gap-2">
-        <Link
-          href={`${baseHref}${baseHref.includes("?") ? "&" : "?"}halaman=${prev}`}
-          aria-disabled={halaman <= 1}
-          className={`meta border border-ink/20 bg-paper px-3 py-1 normal-case tracking-normal ${
-            halaman <= 1 ? "pointer-events-none opacity-40" : "hover:border-ink"
-          }`}
-        >
-          ← Sebelumnya
-        </Link>
-        <Link
-          href={`${baseHref}${baseHref.includes("?") ? "&" : "?"}halaman=${next}`}
-          aria-disabled={halaman >= totalHalaman}
-          className={`meta border border-ink/20 bg-paper px-3 py-1 normal-case tracking-normal ${
-            halaman >= totalHalaman
-              ? "pointer-events-none opacity-40"
-              : "hover:border-ink"
-          }`}
-        >
-          Berikutnya →
-        </Link>
-      </div>
-    </nav>
-  );
-}
+  const sp = await searchParams;
+  const jenis: JenisKelompok = isJenisKelompok(sp.jenis) ? sp.jenis : "pekerjaan";
 
-export default function PanelDetailKelompok({ info, label, daftar }: Props) {
-  // baseHref pakai hashState dengan query jenis (tanpa halaman)
-  // - sudah ada di URL sebagai /admin/kelompok/[jenis]/[id], tidak ada query
-  const baseHref = `/admin/kelompok/${info.jenis}/${info.id}`;
+  const rekap = await ambilRekapKelompok(jenis);
+
+  // Tentukan baris mana yang "tersembunyi" (total == 0 dan persen == 0)
+  // untuk dipisahkan ke tabel ringkasan opsional, tapi default kita tampilkan
+  // semua agar perangkat desa tahu kategori yang belum terisi.
+
+  const totalSeluruh = rekap.baris.reduce((acc, r) => acc + r.total, 0);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      {/* === BREADCRUMB === */}
+      <nav className="meta flex items-center gap-2">
+        <Link href="/" className="hover:text-clay">
+          Beranda
+        </Link>
+        <span aria-hidden="true">/</span>
+        <Link href="/admin" className="hover:text-clay">
+          Dasbor
+        </Link>
+        <span aria-hidden="true">/</span>
+        <Link href="/admin/kependudukan" className="hover:text-clay">
+          Kependudukan
+        </Link>
+        <span aria-hidden="true">/</span>
+        <span className="text-ink">Kelompok</span>
+      </nav>
+
+      <header className="border-b border-ink/15 pb-6">
+        <p className="meta mb-2">Kependudukan · Kelompok</p>
+        <h2 className="font-serif text-3xl leading-tight lg:text-4xl">
+          Kelompok Warga
+        </h2>
+        <p className="mt-3 max-w-2xl text-ink-muted">
+          Pengelompokan warga berdasarkan atribut demografis. Pilih kategori
+          di bawah untuk melihat rekap. Setiap baris menaut ke daftar lengkap
+          anggota kelompok.
+        </p>
+      </header>
+
+      {/* === TAB JENIS === */}
+      <nav
+        aria-label="Kategori kelompok"
+        className="flex flex-wrap gap-1 border-b border-ink/15"
+      >
+        {JENIS_KELOMPOK.map((j) => {
+          const aktif = j === jenis;
+          return (
+            <Link
+              key={j}
+              href={`/admin/kelompok?jenis=${j}`}
+              className={`meta -mb-px border-b-2 px-3 py-2 normal-case tracking-normal transition-colors ${
+                aktif
+                  ? "border-clay text-ink"
+                  : "border-transparent text-ink-muted hover:border-ink/30 hover:text-ink"
+              }`}
+              aria-current={aktif ? "page" : undefined}
+            >
+              {LABEL_JENIS_KELOMPOK[j]}
+            </Link>
+          );
+        })}
+      </nav>
+
       {/* === RINGKASAN === */}
-      <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCell label={`Kategori ${label}`} value={info.nama} />
-        <StatCell label="Total Anggota" value={info.total} />
-        <StatCell label="Laki-laki" value={info.laki} />
-        <StatCell label="Perempuan" value={info.perempuan} />
+      <dl className="grid grid-cols-2 gap-px border border-ink/10 bg-ink/10 lg:grid-cols-4">
+        <div className="bg-paper px-4 py-5">
+          <dt className="meta">Kategori Aktif</dt>
+          <dd className="mt-2 font-serif text-2xl tabular-nums">
+            {rekap.label}
+          </dd>
+        </div>
+        <div className="bg-paper px-4 py-5">
+          <dt className="meta">Jumlah Kelompok</dt>
+          <dd className="mt-2 font-serif text-3xl tabular-nums">
+            {rekap.baris.length.toLocaleString("id-ID")}
+          </dd>
+        </div>
+        <div className="bg-paper px-4 py-5">
+          <dt className="meta">Total Warga</dt>
+          <dd className="mt-2 font-serif text-3xl tabular-nums">
+            {rekap.totalPenduduk.toLocaleString("id-ID")}
+          </dd>
+        </div>
+        <div className="bg-paper px-4 py-5">
+          <dt className="meta">Kelompok Terisi</dt>
+          <dd className="mt-2 font-serif text-3xl tabular-nums">
+            {totalSeluruh.toLocaleString("id-ID")}
+          </dd>
+          <p className="meta text-2xs text-ink-muted">
+            akumulasi anggota per kelompok
+          </p>
+        </div>
       </dl>
 
-      {/* === TABEL ANGGOTA === */}
-      <section
-        aria-labelledby="anggota-heading"
-        className="border border-ink/15 bg-paper"
-      >
-        <header className="flex flex-col gap-2 border-b border-ink/10 p-4 sm:flex-row sm:items-end sm:justify-between">
-          <h3 id="anggota-heading" className="font-serif text-xl">
-            Daftar Anggota
-          </h3>
-          <p className="meta">
-            {daftar.total} baris · {daftar.perHalaman} per halaman
-          </p>
-        </header>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-ink/5 text-left">
+      {/* === TABEL === */}
+      <div className="overflow-x-auto border border-ink/15">
+        <table className="w-full text-sm">
+          <thead className="bg-ink/5 text-left">
+            <tr>
+              <th scope="col" className="px-3 py-2">
+                {rekap.label}
+              </th>
+              <th scope="col" className="px-3 py-2 text-right">
+                Total
+              </th>
+              <th scope="col" className="px-3 py-2 text-right">
+                Laki-laki
+              </th>
+              <th scope="col" className="px-3 py-2 text-right">
+                Perempuan
+              </th>
+              <th scope="col" className="px-3 py-2 text-right">
+                %
+              </th>
+              <th scope="col" className="px-3 py-2 text-right">
+                Aksi
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {rekap.baris.length === 0 && (
               <tr>
-                <th scope="col" className="px-3 py-2">
-                  NIK
-                </th>
-                <th scope="col" className="px-3 py-2">
-                  Nama
-                </th>
-                <th scope="col" className="px-3 py-2 text-center">
-                  JK
-                </th>
-                <th scope="col" className="px-3 py-2">
-                  Tempat, Tgl Lahir
-                </th>
-                <th scope="col" className="px-3 py-2">
-                  No. KK
-                </th>
-                <th scope="col" className="px-3 py-2">
-                  Hubungan KK
-                </th>
+                <td
+                  colSpan={6}
+                  className="px-3 py-6 text-center text-ink-muted"
+                >
+                  Belum ada data referensi {rekap.label.toLowerCase()}.
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {daftar.baris.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={6}
-                    className="px-3 py-8 text-center text-ink-muted"
-                  >
-                    Belum ada warga yang tercatat di kelompok ini.
+            )}
+            {rekap.baris.map((row) => {
+              const zero = row.total === 0;
+              return (
+                <tr
+                  key={row.id}
+                  className={`border-t border-ink/10 ${zero ? "text-ink-muted" : "hover:bg-ink/5"}`}
+                >
+                  <td className="px-3 py-2 font-medium">{row.nama}</td>
+                  <td className="px-3 py-2 text-right tabular-nums">
+                    {row.total.toLocaleString("id-ID")}
+                  </td>
+                  <td className="px-3 py-2 text-right tabular-nums">
+                    {row.laki.toLocaleString("id-ID")}
+                  </td>
+                  <td className="px-3 py-2 text-right tabular-nums">
+                    {row.perempuan.toLocaleString("id-ID")}
+                  </td>
+                  <td className="px-3 py-2 text-right tabular-nums">
+                    {row.persen}%
+                  </td>
+                  <td className="px-3 py-2 text-right">
+                    <Link
+                      href={`/admin/kelompok/${jenis}/${row.id}`}
+                      className={`meta border border-ink/20 bg-paper px-2 py-1 normal-case tracking-normal ${
+                        zero
+                          ? "pointer-events-none opacity-40"
+                          : "hover:border-clay hover:text-clay"
+                      }`}
+                      aria-disabled={zero}
+                      tabIndex={zero ? -1 : undefined}
+                    >
+                      Lihat Anggota
+                    </Link>
                   </td>
                 </tr>
-              ) : (
-                daftar.baris.map((p) => (
-                  <tr
-                    key={p.id}
-                    className="border-t border-ink/10 hover:bg-ink/5"
-                  >
-                    <td className="px-3 py-2 font-mono text-xs tabular-nums">
-                      {p.nik}
-                    </td>
-                    <td className="px-3 py-2">
-                      <Link
-                        href={`/admin/kependudukan/${p.nik}`}
-                        className="font-medium underline decoration-ink/20 underline-offset-2 hover:text-clay hover:decoration-clay"
-                      >
-                        {p.nama}
-                      </Link>
-                    </td>
-                    <td className="px-3 py-2 text-center tabular-nums">
-                      {labelJK(p.sex)}
-                    </td>
-                    <td className="px-3 py-2">
-                      <div>{p.tempatlahir ?? "—"}</div>
-                      <div className="meta text-2xs">
-                        {formatTanggalIndo(p.tanggallahir)}
-                      </div>
-                    </td>
-                    <td className="px-3 py-2">
-                      {p.no_kk ? (
-                        <Link
-                          href={`/admin/kependudukan/kk/${p.no_kk}`}
-                          className="font-mono text-xs underline decoration-ink/20 underline-offset-2 hover:text-clay hover:decoration-clay"
-                        >
-                          {p.no_kk}
-                        </Link>
-                      ) : (
-                        <span className="text-ink-muted">—</span>
-                      )}
-                    </td>
-                    <td className="px-3 py-2 text-ink-muted">
-                      {p.hubungan_kk ?? "—"}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-        <div className="px-4">
-          <Paginasi
-            halaman={daftar.halaman}
-            totalHalaman={daftar.totalHalaman}
-            baseHref={baseHref}
-          />
-        </div>
-      </section>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      <aside className="border-t border-ink/15 pt-6 text-sm">
+        <p className="text-ink-muted">
+          Klik tab di atas untuk berpindah kategori. Klik &ldquo;Lihat
+          Anggota&rdquo; untuk membuka detail satu kelompok.
+        </p>
+        <Link href="/admin/kependudukan" className="link-clay mt-2 inline-block">
+          ← Kembali ke Kependudukan
+        </Link>
+      </aside>
     </div>
   );
 }

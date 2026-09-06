@@ -45,10 +45,10 @@ export default async function Frontpage() {
           dan langsung menunjukkan struktur desa. Layout 2 kolom supaya rapi. */}
       {direktori.length > 0 ? (
         <section className="mt-12 lg:mt-16">
-          <div className="mb-6 flex items-baseline justify-between border-b border-ink/15 pb-2">
+          <div className="mb-6 flex items-baseline justify-between border-t border-ink/15 pt-6">
             <h2 className="font-serif text-2xl">Direktori Desa</h2>
-            <Link href="/direktori" className="text-xs text-clay hover:text-ink">
-              Buka direktori →
+            <Link href="/direktori" className="text-sm text-clay hover:text-ink">
+              Lihat direktori
             </Link>
           </div>
           <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
@@ -66,10 +66,10 @@ export default async function Frontpage() {
           3 artikel pilihan terbaru yang ditampilkan di sini. */}
       {pilihan.length > 0 ? (
         <section className="mt-12 lg:mt-16">
-          <div className="mb-6 flex items-baseline justify-between border-b border-ink/15 pb-2">
+          <div className="mb-6 flex items-baseline justify-between border-t border-ink/15 pt-6">
             <h2 className="font-serif text-2xl">Sorotan Pilihan</h2>
-            <Link href="/artikel" className="text-xs text-clay hover:text-ink">
-              Lihat semua artikel →
+            <Link href="/artikel" className="text-sm text-clay hover:text-ink">
+              Semua artikel
             </Link>
           </div>
           <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
